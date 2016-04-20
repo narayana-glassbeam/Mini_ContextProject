@@ -1,0 +1,142 @@
+package com.glassbeam.context
+
+/**
+  * Created by narayana on 18/4/16.
+  */
+import java.io.File
+import java.util.Calendar
+
+import com.glassbeam.context.ContextSection.ContextSection
+import com.glassbeam.context.ContextStage.ContextStage
+import com.glassbeam.failuredefs.MsgTemplate
+import com.glassbeam.model.ContextFailure._
+import com.glassbeam.model.Logger
+
+import scala.collection.immutable.HashMap
+import scala.util.matching.Regex
+
+case class ContextReason(val contextStrings: Map[String, Any], val reason: String, val failure: Option[ContextFailure] = None,
+                         val bproperties: Option[Map[String, String]] = None)
+case class ContextClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String)
+case class ContextExecFnArguments(cr: ContextReason, file: File, loadId: Long)
+
+object ContextSection extends Enumeration {
+  type ContextSection = Value
+  val MutableFunction, MutableVariable, ImmutableVariable = Value
+}
+
+object ContextStage extends Enumeration {
+  type ContextStage = Value
+  val Watcher, Loader, Both = Value
+}
+
+abstract class AbstractContextObject extends Logger {
+  val isAssignment: Boolean
+  val fullRegex: Regex
+  val rhsRegex: Regex
+
+  val logger = Logging(this)
+
+  def getObject(carg: ContextClassArguments): AbstractContextClass
+}
+
+trait MutableLoaderFunction {
+  val contextSection: ContextSection = ContextSection.MutableFunction
+  val contextStage: ContextStage = ContextStage.Loader
+}
+
+trait MutableWatcherFunction {
+  val contextSection: ContextSection = ContextSection.MutableFunction
+  val contextStage: ContextStage = ContextStage.Watcher
+}
+
+//trait ParsableObtainer{
+//  val parsableObtainer = (classname:String) => //Context.getParsable(classname)
+//}
+
+abstract class ContextAssignmentObject extends AbstractContextObject {
+  val isAssignment = true
+  val fullRegex = """(.+?)=(.+?)""".r
+}
+
+abstract class ContextStatementObject extends AbstractContextObject {
+  val isAssignment = false
+  val rhsRegex = null
+}
+
+abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject) {
+
+  val mps = carg.manufacturer + "/" + carg.product + "/" + carg.schema
+
+  val contextSection: ContextSection
+  val contextStage: ContextStage
+
+  val (lhs, rhsSplit) = if (ACO.isAssignment) {
+    ACO.fullRegex.unapplySeq(carg.context) match {
+      case None =>
+        ACO.logger.error(mps, s"assignment context function did NOT match assignment regex pattern: ${carg.context}, line = ${carg.linenum}, CMPS=$CMPS")
+        (null, None)
+      case Some(eqSplit) =>
+        val (l, r) = (eqSplit.head.trim, eqSplit(1).trim)
+        if (r.equals("''")) {
+          (l, Some(List("")))
+        } else {
+          val rSplit = ACO.rhsRegex.unapplySeq(r)
+          (l, rSplit)
+        }
+    }
+  } else {
+    (null, ACO.fullRegex.unapplySeq(carg.context))
+  }
+
+  lazy val CMPS: String =
+    if (carg.customer == null) "loader"
+    else carg.customer + "/" + carg.manufacturer + "/" + carg.product + "/" + carg.schema
+
+  lazy val calendar = Calendar.getInstance()
+
+  lazy val (assertOptionalTemplateId, assertOptionalMsg) = getOptionalParams
+
+  def execute(cr: ContextExecFnArguments): ContextReason
+
+  def arg: ContextClassArguments = carg
+
+  def evalAssignment(callback: (String, List[String], ContextExecFnArguments) => ContextReason, cefa: ContextExecFnArguments) = {
+    lhs == null || rhsSplit.isEmpty match {
+      case true =>
+        val err = s"Assignment statement not okay. context line = ${carg.context}, linenum = ${carg.linenum}, CMPS = ${CMPS}, lhs = $lhs, rhsSplit = $rhsSplit"
+        ACO.logger.error(mps, err)
+        ContextReason(new HashMap[String, String](), err, Some(AssignmentStmtError))
+      case _ =>
+        callback(lhs, rhsSplit.get, cefa)
+    }
+  }
+  def evalStatement(callback: (Option[List[String]], ContextExecFnArguments) => ContextReason, cefa: ContextExecFnArguments) =
+    callback(rhsSplit, cefa)
+
+  def getTemplate(errStr: String, loadId: Long) = MsgTemplate(Option(CMPS), Option(loadId.toInt), errStr)
+
+  def getOptionalParams = {
+    // Handling optional regex groups as per the regex
+    rhsSplit match {
+      case Some(x) => x match {
+        case List(a, templateId1, b, templateId2, msg2, c, msg3) =>
+          getParams(templateId1, templateId2, msg2, msg3)
+        case List(ctxvar, a, templateId1, b, templateId2, msg2, c, msg3) =>
+          getParams(templateId1, templateId2, msg2, msg3)
+        case _ => (None, None)
+      }
+      case None => (None, None)
+    }
+  }
+
+  def getParams(templateId1: String, templateId2: String, msg2: String, msg3: String) = {
+    // Parms can be (tid | tid, msg | msg): Any or all input params can be null
+    val t = List(Option(templateId1), Option(templateId2)).flatten
+    val m = List(Option(msg2), Option(msg3)).flatten
+    val templateId = if (t.nonEmpty) Some(t.head.trim.toInt) else None
+    val msg = if (m.nonEmpty) Some(m.head.trim) else None
+    (templateId, msg)
+  }
+
+}

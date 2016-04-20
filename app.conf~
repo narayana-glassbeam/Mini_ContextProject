@@ -1,0 +1,128 @@
+akka {
+  loggers = ["akka.event.slf4j.Slf4jLogger"]
+
+  logger-startup-timeout = 30s
+
+  actor {
+    provider = "akka.remote.RemoteActorRefProvider"
+  }
+  remote {
+    enabled-transports = ["akka.remote.netty.tcp"]
+    netty.tcp {
+      hostname = "127.0.0.1"
+      port = 7011
+    }
+  }
+
+  # Use this logger for Atmos, comment above one
+  #loggers = ["com.typesafe.atmos.trace.Slf4jTraceContextLogger"]
+
+  # this controls the log level of LCP
+  loglevel = "INFO"
+  logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+  log-config-on-start  = on
+
+  debug {
+    receive = OFF
+    autoreceive = on
+    lifecycle = on
+    event-stream = on
+  }
+
+  remote {
+    log-sent-messages = on
+    log-received-messages = on
+  }
+
+    actor {
+      debug {
+        lifecycle = OFF
+      }
+
+      default-dispatcher {
+        executor = "fork-join-executor"
+        fork-join-executor {
+          parallelism-min = 4
+          parallelism-max = 16
+          parallelism-factor = 3.0
+        }
+        throughput = 100
+      }
+
+      lcp-loadsystem-dispatcher {
+        executor = thread-pool-executor
+        type = PinnedDispatcher
+        thread-pool-executor {
+          allow-core-timeout = off
+        }
+      }
+
+      lcp-watcher-dispatcher {
+        executor = thread-pool-executor
+        type = PinnedDispatcher
+        thread-pool-executor {
+          allow-core-timeout = off
+        }
+      }
+
+      deployment {
+        "/LCP/Cassandra/*" {
+          router = round-robin-pool
+          nr-of-instances = 5
+        }
+        "/LCP/Solr/*" {
+          router = round-robin-pool
+          nr-of-instances = 8
+        }
+        "/LCP/Watcher/WatcherH2DAL" {
+          router = round-robin-pool
+          nr-of-instances = 1
+        }
+        "/LCP/Watcher/*" {
+          router = round-robin-pool
+          nr-of-instances = 1
+        }
+        "/LCP/Notification/*" {
+          router = round-robin-pool
+          nr-of-instances = 2
+        }
+
+      }
+    }
+
+  # extensions = ["kamon.metric.Metrics", "kamon.logreporter.LogReporter"]
+}
+
+kamon {
+  metrics {
+    tick-interval = 60000,
+    report-system-metrics = false,
+    filters = [
+      {
+        actor {
+          includes = [ "user/*" ]
+          excludes = [ "user/kamon*" ]
+        }
+      },
+      {
+        trace {
+          includes = [ "*" ]
+          excludes = []
+        }
+      }
+    ]
+  }
+}
+
+com.mchange.v2.c3p0.management.ManagementCoordinator=com.mchange.v2.c3p0.management.NullManagementCoordinator
+
+lcp {
+  cassandra {
+    driver-write-timeout = 50 seconds
+    driver-connect-timeout = 30 seconds
+    driver-tcp-no-delay = true
+    driver-reconnect-base-delay = 1 seconds
+    driver-reconnect-max-delay = 60 seconds
+    write-consistency-level = "ONE"
+  }
+}
