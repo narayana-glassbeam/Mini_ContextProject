@@ -19,6 +19,7 @@ case class ContextReason(val contextStrings: Map[String, Any], val reason: Strin
                          val bproperties: Option[Map[String, String]] = None)
 case class ContextClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String)
 case class ContextExecFnArguments(cr: ContextReason, file: File, loadId: Long)
+case class WatContextArguments(file_name:String,mps:String)
 
 object ContextSection extends Enumeration {
   type ContextSection = Value
@@ -34,10 +35,11 @@ abstract class AbstractContextObject extends Logger {
   val isAssignment: Boolean
   val fullRegex: Regex
   val rhsRegex: Regex
+  val name:String
 
   val logger = Logging(this)
 
-  def getObject(carg: ContextClassArguments): AbstractContextClass
+ // def getObject(carg: ContextClassArguments): AbstractContextClass
 }
 
 trait MutableLoaderFunction {
@@ -51,7 +53,7 @@ trait MutableWatcherFunction {
 }
 
 //trait ParsableObtainer{
-//  val parsableObtainer = (classname:String) => //Context.getParsable(classname)
+//  val parsableObtainer = (classname:String) => Context.getParsable(classname)
 //}
 
 abstract class ContextAssignmentObject extends AbstractContextObject {
@@ -62,32 +64,92 @@ abstract class ContextAssignmentObject extends AbstractContextObject {
 abstract class ContextStatementObject extends AbstractContextObject {
   val isAssignment = false
   val rhsRegex = null
+
 }
 
-abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject) {
+abstract class WatcherContextStatement extends ContextStatementObject {
+
+  def getObject(carg: ContextClassArguments): AbstractWatcherContext
+}
+
+abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject)  {
 
   val mps = carg.manufacturer + "/" + carg.product + "/" + carg.schema
-
   val contextSection: ContextSection
   val contextStage: ContextStage
 
-  val (lhs, rhsSplit) = if (ACO.isAssignment) {
-    ACO.fullRegex.unapplySeq(carg.context) match {
-      case None =>
-        ACO.logger.error(mps, s"assignment context function did NOT match assignment regex pattern: ${carg.context}, line = ${carg.linenum}, CMPS=$CMPS")
-        (null, None)
-      case Some(eqSplit) =>
-        val (l, r) = (eqSplit.head.trim, eqSplit(1).trim)
-        if (r.equals("''")) {
-          (l, Some(List("")))
-        } else {
-          val rSplit = ACO.rhsRegex.unapplySeq(r)
-          (l, rSplit)
-        }
+  def getLhsRhsRegex(ACO:AbstractContextObject,carg: ContextClassArguments) = {
+    val (lhs, rhsSplit) = if (ACO.isAssignment) {
+      ACO.fullRegex.unapplySeq(carg.context) match {
+        case None =>
+          ACO.logger.error(s"assignment context function did NOT match assignment regex pattern: ${carg.context}, line = ${carg.linenum}")
+          (null, None)
+        case Some(eqSplit) =>
+          val (l, r) = (eqSplit.head.trim, eqSplit(1).trim)
+          if (r.equals("''")) {
+            (l, Some(List("")))
+          } else {
+            val rSplit = ACO.rhsRegex.unapplySeq(r)
+            (l, rSplit)
+          }
+      }
+    } else {
+      (null, ACO.fullRegex.unapplySeq(carg.context))
     }
-  } else {
-    (null, ACO.fullRegex.unapplySeq(carg.context))
+    (lhs,rhsSplit)
   }
+
+}
+
+abstract  class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractContextObject) extends AbstractContextClass(warg:ContextClassArguments,AWCO:AbstractContextObject) {
+
+  val (lhs, rhsSplit) =  getLhsRhsRegex(AWCO,warg)
+
+  def evalFileMatchesPattern(wefa: WatContextArguments):Boolean = {
+    // ToDo: Create the regex and match it with the filename
+    var filematched = false
+    rhsSplit match {
+      case Some(filepat) =>
+        filepat.foreach(regpat =>{ val pat =  regpat.r.pattern
+          if (pat.matcher(wefa.file_name).matches()) {
+            filematched = true
+          }
+        } )
+      case None =>
+        AWCO.logger.error(s"Regex is not proper for mps ${wefa.mps} for filename ${wefa.file_name}")
+    }
+    filematched
+  }
+
+  def evalUncompressLevel(wefa: WatContextArguments):Int = {
+    println(s"received get max Uncompress level method for "+wefa.file_name+" for mps "+wefa.mps)
+    val rhsdepthmatch = rhsSplit.get
+    var bfound = false
+    var bundle_depth = 5
+    if(rhsdepthmatch.length == 2){
+      val bundle_name = rhsdepthmatch.head
+      val bundle_pattern = bundle_name.r.pattern
+      if (bundle_pattern.matcher(wefa.file_name).matches()) {
+        bfound = true
+        bundle_depth = rhsdepthmatch.lift(1) match {
+          case Some(depth) => depth.toInt
+          case None =>
+            UncompressLevel.logger.error(s"Bundle Depth not found for mps ${wefa.mps} for filename ${wefa.file_name}")
+            return  bundle_depth
+        }
+      }
+    }else{
+      UncompressLevel.logger.error(s"Uncompressel Level pattern has too many matches for mps ${wefa.mps} for filename ${wefa.file_name}")
+    }
+    println(s"for file name ${wefa.file_name} bundle depth is "+bundle_depth)
+    bundle_depth
+  }
+
+}
+
+abstract class AbstractLoaderContext(carg: ContextClassArguments, ACO: AbstractContextObject) extends AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject) {
+
+  val (lhs, rhsSplit) =  getLhsRhsRegex(ACO,carg)
 
   lazy val CMPS: String =
     if (carg.customer == null) "loader"
@@ -113,6 +175,7 @@ abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractCo
   }
   def evalStatement(callback: (Option[List[String]], ContextExecFnArguments) => ContextReason, cefa: ContextExecFnArguments) =
     callback(rhsSplit, cefa)
+
 
   def getTemplate(errStr: String, loadId: Long) = MsgTemplate(Option(CMPS), Option(loadId.toInt), errStr)
 
