@@ -5,8 +5,8 @@ import akka.util.Timeout
 import com.glassbeam.context.ContextCases._
 import com.glassbeam.model.{Logger, Opsdb}
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 object ContextMain extends Logger {
 
@@ -32,4 +32,10 @@ object ContextMain extends Logger {
   }
 
 
+}
+
+object Init extends Enumeration {
+  type Init = Value
+  val Run, Test, TestWithH2, TestWithCassandra, TestWithSolr = Value
+  var inittype = Run
 }

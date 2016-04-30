@@ -10,12 +10,13 @@ import com.glassbeam.context.ContextSection.ContextSection
 import com.glassbeam.context.ContextStage.ContextStage
 import com.glassbeam.failuredefs.MsgTemplate
 import com.glassbeam.model.ContextFailure._
+import com.glassbeam.context.ContextHelpers._
 import com.glassbeam.model.Logger
 
 import scala.collection.immutable.HashMap
 import scala.util.matching.Regex
 
-case class ContextReason(val contextStrings: Map[String, Any], val reason: String, val failure: Option[ContextFailure] = None,
+case class ContextReason(val contextStrings: HashMap[String, String], val reason: String, val failure: Option[ContextFailure] = None,
                          val bproperties: Option[Map[String, String]] = None)
 case class ContextClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String)
 case class ContextExecFnArguments(cr: ContextReason, file: File, loadId: Long)
@@ -35,7 +36,6 @@ abstract class AbstractContextObject extends Logger {
   val isAssignment: Boolean
   val fullRegex: Regex
   val rhsRegex: Regex
-  val name:String
 
   val logger = Logging(this)
 
@@ -52,9 +52,9 @@ trait MutableWatcherFunction {
   val contextStage: ContextStage = ContextStage.Watcher
 }
 
-//trait ParsableObtainer{
-//  val parsableObtainer = (classname:String) => Context.getParsable(classname)
-//}
+trait ParsableObtainer {
+  val parsableObtainer = (classname:String) => getParsable(classname)
+}
 
 abstract class ContextAssignmentObject extends AbstractContextObject {
   val isAssignment = true
@@ -68,8 +68,18 @@ abstract class ContextStatementObject extends AbstractContextObject {
 }
 
 abstract class WatcherContextStatement extends ContextStatementObject {
-
+  val name:String
   def getObject(carg: ContextClassArguments): AbstractWatcherContext
+}
+
+abstract class LoaderContextStatement extends ContextStatementObject {
+
+  def getObject(carg: ContextClassArguments): AbstractLoaderContext
+}
+
+trait LoaderContextAssignment extends ContextAssignmentObject {
+
+  def getObject(carg: ContextClassArguments): AbstractLoaderContext
 }
 
 abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject)  {

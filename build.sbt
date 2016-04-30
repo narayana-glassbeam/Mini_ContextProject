@@ -28,5 +28,23 @@ libraryDependencies += "ch.qos.logback" % "logback-core" % "1.1.3"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.3"
 
+libraryDependencies += "org.json4s" %% "json4s-native" % "3.2.11"
+
+libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.11"
+
+libraryDependencies += "com.google.guava" % "guava" % "18.0"
+
+libraryDependencies += "com.ximpleware" % "vtd-xml" % "2.11"
+
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.6" % "test"
+
+libraryDependencies +="org.scalacheck" %% "scalacheck" % "1.12.4" % "test"
+
+libraryDependencies +="org.scalamock" %% "scalamock-scalatest-support" % "3.2" % "test"
+
+libraryDependencies +="commons-io" % "commons-io" % "2.4"
+
+libraryDependencies +="com.iheart" %% "ficus" % "1.2.0" % "test"
+
 
 
