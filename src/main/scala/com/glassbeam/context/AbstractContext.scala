@@ -32,14 +32,13 @@ object ContextStage extends Enumeration {
   val Watcher, Loader, Both = Value
 }
 
-abstract class AbstractContextObject extends Logger {
+trait AbstractContextObject extends Logger {
   val isAssignment: Boolean
   val fullRegex: Regex
   val rhsRegex: Regex
 
   val logger = Logging(this)
 
- // def getObject(carg: ContextClassArguments): AbstractContextClass
 }
 
 trait MutableLoaderFunction {
@@ -56,29 +55,23 @@ trait ParsableObtainer {
   val parsableObtainer = (classname:String) => getParsable(classname)
 }
 
-abstract class ContextAssignmentObject extends AbstractContextObject {
-  val isAssignment = true
-  val fullRegex = """(.+?)=(.+?)""".r
-}
 
-abstract class ContextStatementObject extends AbstractContextObject {
+trait WatcherContextStatement extends AbstractContextObject {
+  val name:String
   val isAssignment = false
   val rhsRegex = null
-
-}
-
-abstract class WatcherContextStatement extends ContextStatementObject {
-  val name:String
   def getObject(carg: ContextClassArguments): AbstractWatcherContext
 }
 
-abstract class LoaderContextStatement extends ContextStatementObject {
-
+trait LoaderContextStatement extends AbstractContextObject {
+  val isAssignment = false
+  val rhsRegex = null
   def getObject(carg: ContextClassArguments): AbstractLoaderContext
 }
 
-trait LoaderContextAssignment extends ContextAssignmentObject {
-
+trait LoaderContextAssignment extends AbstractContextObject {
+  val isAssignment = true
+  val fullRegex = """(.+?)=(.+?)""".r
   def getObject(carg: ContextClassArguments): AbstractLoaderContext
 }
 
