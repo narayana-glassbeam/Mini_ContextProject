@@ -29,12 +29,14 @@ class ContextSupervisor extends Actor with Logger {
 
   override def preStart() = {
     initializeAllMPS()
+    println("in context supervisor prestart")
   }
 
   private def getActorname(mps:String)={"context_"+alphanumeric(mps)}
 
   def initializeAllMPS() = {
     val allMPSKeys = ContextTableDao.getAllKeys()
+
     allMPSKeys.foreach(mpskey => createMpsContext(mpskey))
   }
 
@@ -44,8 +46,10 @@ class ContextSupervisor extends Actor with Logger {
       ContextTableDao.getContextForKey(key) match {
         case Some(mps_context) =>
           keytots.putIfAbsent(key,mps_context._3)
+          //println("initializing context for mps "+mps_context)
           val child_props:(Props,String) = props(key,mps_context._1,mps_context._2)
           val contextMpsEval_A = context.actorOf(child_props._1,child_props._2)
+         // println("mps context created for "+contextMpsEval_A.path)
           contextMpsEval_A ! InitializeContext
           logger.info(s"Context Supervisor created child mps "+key+" with name "+contextMpsEval_A.path.name)
         case None =>
@@ -66,10 +70,11 @@ class ContextSupervisor extends Actor with Logger {
             case None =>
                 logger.error(s"child actor of mps ${msg.mps} not found")
         }
-    case create_context@LoadidToContext(loadid:Long,mps:String) =>
+    case create_context@LoadidToContext(loadid,mps) =>
       val childActorname = getActorname(mps)
       context.child(childActorname) match {
         case Some(mpsContextActor) =>
+          println("create loadid to context message receieved in supervisor")
           mpsContextActor.forward(create_context)
         case None =>
           logger.error(s"child actor of mps ${mps} not found")

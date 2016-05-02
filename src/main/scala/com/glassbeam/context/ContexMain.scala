@@ -21,12 +21,16 @@ object ContextMain extends Logger {
     val contextSupervisor = system.actorOf(props,name)
     val file_name = "/home/narayana/var/log/oslog/RFM.log"
     val mps = "aruba/aruba/podv1"
+    val loadid = 1234
     Thread.sleep(20000)
-    val deletefile:Future[Boolean] = (contextSupervisor ? DeleteFile(file_name:String,mps:String)).mapTo[Boolean]
+    contextSupervisor ! LoadidToContext(loadid,mps)
+    println("loaid to context create sent for "+loadid)
+    Thread.sleep(20000)
+    val deletefile:Future[Boolean] = (contextSupervisor ? DeleteFile(file_name:String,mps:String,loadid)).mapTo[Boolean]
     val result2 = Await.result(deletefile, 1 minutes)
     println(s"sent delete file pattern $file_name resut  "+result2)
-    val bundle_depth:Future[Int] = (contextSupervisor ? UncompressBundleDepth(file_name:String,mps:String)).mapTo[Int]
-    val result3 = Await.result(bundle_depth, 2 minutes)
+    val bundle_depth:Future[Int] = (contextSupervisor ? UncompressBundleDepth(file_name:String,mps:String,loadid)).mapTo[Int]
+    val result3 = Await.result(bundle_depth, 5 minutes)
     println("received bundle depth "+result3)
     contextSupervisor ! Done
   }

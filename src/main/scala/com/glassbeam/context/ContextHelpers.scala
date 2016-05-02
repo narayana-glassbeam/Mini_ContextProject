@@ -117,7 +117,10 @@ trait ContextLines {
 
   def getContextLines(mContext:String,immContext:String) = {
               val mutable_lines = ( getBundleLine +newLineChar+ mContext ).split("\r\n").map(_.trim)
+    //println("in get context lines mutable lines "+ (getBundleLine +newLineChar+ mContext).split("\r\n").map(_.trim).mkString )
               val immutable_lines = immContext.split("\r\n").map(_.trim)
+    //println(" filtered immutable lines "+immutable_lines.mkString+" immutable context "+immContext)
+
     (mutable_lines,immutable_lines)
   }
 

@@ -10,7 +10,7 @@ object LoadIdToContext {
 
   def ltc_name(loadid:Long) = "context_"+loadid
 
-  def props(loadid:Long,mps:String,MWCache:Map[String, Vector[AbstractWatcherContext]],MLCache:Map[String, Vector[AbstractLoaderContext]]) = {
+  def props(loadid:Long, mps:String, MWCache:HashMap[String, Vector[AbstractWatcherContext]], MLCache:HashMap[String, Vector[AbstractLoaderContext]]) = {
     (Props(classOf[LoadIdToContext],MWCache,MLCache,loadid,mps),ltc_name(loadid))
   }
 
@@ -19,6 +19,7 @@ object LoadIdToContext {
 class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractWatcherContext]],loadid:Long,emps:String) extends Actor with Logger {
 
   private val logger = Logging(this)
+
 
   def isFileMatched(fileName:String,ContextPatternName:String):Boolean = {
     val wca = WatContextArguments(fileName,emps)
@@ -37,7 +38,8 @@ class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatc
   }
 
   def receive = {
-    case DeleteFile(fileName,mps,loadid)=>  sender ! isFileMatched(fileName,DelPat.name)
+
+    case DeleteFile(fileName,mps,loadid)=> sender ! isFileMatched(fileName,DelPat.name)
 
     case SkipFile(fileName,mps,loadid) =>  sender ! isFileMatched(fileName,SkipPat.name)
 
@@ -57,13 +59,15 @@ class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatc
 
     case UncompressBundleDepth(fileName,mps,loadid) =>
       val wca = WatContextArguments(fileName,emps)
-      val depth =  mutableWatcherFunction.get(UncompressLevel.name) match {
+      var depth:Int = 0
+      mutableWatcherFunction.get(UncompressLevel.name) match {
         case Some(insts) =>
-          insts.foreach(uncompressInst => uncompressInst.evalUncompressLevel(wca))
+          insts.foreach(uncompressInst =>{ depth = uncompressInst.evalUncompressLevel(wca)})
         case None =>
           logger.error(s" MaxUncompresLevel not found for file name ${fileName} for mps ${emps}")
-          0
       }
-      sender ! depth.asInstanceOf[Int]
+      sender ! depth
+
+    //case file_eval(filename:File,mps,loadid)
   }
 }

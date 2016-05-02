@@ -38,7 +38,7 @@ class Literal(carg: ContextClassArguments) extends AbstractLoaderContext(carg, L
  * Context function to concatenate multiple values
  */
 object Concat extends LoaderContextAssignment {
-  val rhsRegex = """^concat\((.*)\)\s*$""".r
+  val rhsRegex = """^s.concat\((.*)\)\s*$""".r
 
   def getObject(carg: ContextClassArguments) = new Concat(carg)
 }
@@ -57,7 +57,7 @@ class Concat(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Co
   * Context function to Coalesce multiple values
   */
 object Coalesce extends LoaderContextAssignment {
-  val rhsRegex = """^coalesce\((.+?)\)\s*$""".r
+  val rhsRegex = """^s.coalesce\((.+?)\)\s*$""".r
 
   def getObject(carg: ContextClassArguments) = new Coalesce(carg)
 }
@@ -378,7 +378,7 @@ class AssertFileDuplicate(carg: ContextClassArguments) extends AbstractLoaderCon
   SDF to epoch
  */
 object SDF2EPOCH extends LoaderContextAssignment {
-  val rhsRegex = """^SDF2EPOCH\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
+  val rhsRegex = """^sdf2epoch\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
 
   def getObject(carg: ContextClassArguments) = new SDF2EPOCH(carg)
 }
@@ -859,9 +859,9 @@ class ProcessFileToContext(carg: ContextClassArguments,getParsable: String => Pa
   def execute(cefa: ContextExecFnArguments): ContextReason = evalAssignment(processFileToContext, cefa)
 }
 
-trait ParsableObtainer {
-  val parsableObtainer = (classname:String) => getParsable(classname)
-}
+//trait ParsableObtainer {
+//  val parsableObtainer = (classname:String) => getParsable(classname)
+//}
 /*
   ProcessBundleToContext
  */

@@ -5,6 +5,8 @@ import com.glassbeam.context.ContextCases._
 import com.glassbeam.model.Logger
 import com.glassbeam.model.StartupConfig._
 
+import scala.collection.immutable.HashMap
+
 /**
   * Created by bharadwaj on 29/03/16.
   */
@@ -76,42 +78,54 @@ class ContextEval(emps: String,mContext:String,immContext:String) extends Actor 
       if (context.nonEmpty) {
         var matchedSomething = false
         try {
+          //println("in parse context "+context_line)
           for (watcher_regex <- watcher_statements; if !matchedSomething && watcher_regex.fullRegex.pattern.matcher(context).matches()) {
             matchedSomething = true
+            //println("in parse context "+context_line)
             if (mutableWatcherFunction.contains(watcher_regex.name)) {
               val coninst = watcher_regex.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               var contextVec = mutableWatcherFunction.get(watcher_regex.name).get
               contextVec = contextVec :+ coninst
               mutableWatcherFunction(watcher_regex.name) = contextVec
+              //println("in watcher match "+watcher_regex.name)
             } else {
               val coninst = watcher_regex.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               mutableWatcherFunction += watcher_regex.name -> Vector(coninst)
+              //println("in watcher match "+watcher_regex.name)
             }
           }
           for(loader_assign <- loader_assignments; if !matchedSomething && assignMatch(loader_assign, context)){
-            logger.debug(emps, s"matched as assignment, key = $emps, line = $linenum, context = $context, context-class = ${loader_assign.getClass.getName}")
+            logger.info(emps, s"matched as assignment, key = $emps, line = $linenum, context = $context, context-class = ${loader_assign.getClass.getName}")
             matchedSomething = true
+            //println("in parse context "+context_line)
+            //println("in loader assign boolean "+loader_assign.isAssignment)
             if (mutableLoaderFunction.contains(emps)) {
               val coninst = loader_assign.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               var contextVec = mutableLoaderFunction.get(emps).get
               contextVec = contextVec :+ coninst
               mutableLoaderFunction(emps) = contextVec
+              //println("in loader assign if added to map  "+loader_assign.isAssignment)
             } else {
               val coninst = loader_assign.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               mutableLoaderFunction += emps -> Vector(coninst)
+             // println("in loader assign else added to map  "+loader_assign.isAssignment)
             }
           }
           for(loader_statm <- loader_statements; if !matchedSomething && loader_statm.fullRegex.pattern.matcher(context).matches()){
-            logger.debug(emps, s"matched as simple statement, key = $emps, line = $linenum, context = $context, context-class = ${loader_statm.getClass.getName}")
+            logger.info(emps, s"matched as simple statement, key = $emps, line = $linenum, context = $context, context-class = ${loader_statm.getClass.getName}")
             matchedSomething = true
+            //println("in parse context "+context_line)
+            println("in loader stat  "+loader_statm.isAssignment)
             if (mutableLoaderFunction.contains(emps)) {
               val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               var contextVec = mutableLoaderFunction.get(emps).get
               contextVec = contextVec :+ coninst
               mutableLoaderFunction(emps) = contextVec
+              println("in loader stat if added to map  "+loader_statm.isAssignment)
             } else {
               val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               mutableLoaderFunction += emps -> Vector(coninst)
+              println("in loader stat else added to map  "+loader_statm.isAssignment)
             }
           }
         }catch {
@@ -134,9 +148,10 @@ class ContextEval(emps: String,mContext:String,immContext:String) extends Actor 
 
     case LoadidToContext(loadid,mps) =>
       import com.glassbeam.context.LoadIdToContext._
-      val child_props = props(loadid,mps,mutableWatcherFunction.toMap,mutableLoaderFunction.toMap)
-      context.actorOf(child_props._1,child_props._2)
-
+      val immwfmap = HashMap(mutableWatcherFunction.toSeq:_*)
+      val immlfmap = HashMap(mutableLoaderFunction.toSeq:_*)
+      val child_props = props(loadid,mps,immwfmap,immlfmap)
+      val loadid_context = context.actorOf(child_props._1,child_props._2)
 
     case msg:WatcherContext =>
       import com.glassbeam.context.LoadIdToContext._

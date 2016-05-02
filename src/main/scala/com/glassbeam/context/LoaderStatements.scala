@@ -399,9 +399,9 @@ class AssertBundleDuplicate(carg: ContextClassArguments) extends AbstractLoaderC
     val isBundleDuplicateExists = (BundleDuplicate,exists)
     val bundleDupOptTemp = (template,optTemplate.toString)
     val bundleDupOptMsg = (Msg,optMsg)
-    //Have Doubt on this i have to this function with out missing
-    cefa.cr.contextStrings.+(isBundleDuplicateExists,bundleDupOptTemp,bundleDupOptMsg)
-    cefa.cr
+    //Have Doubt on this i have to check this function with out missing
+    val assertbundle = cefa.cr.contextStrings.+(isBundleDuplicateExists,bundleDupOptTemp,bundleDupOptMsg)
+    ContextReason(assertbundle, cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
   }
 
   def execute(cefa: ContextExecFnArguments): ContextReason = evalStatement(assertBundleDuplicate, cefa)
