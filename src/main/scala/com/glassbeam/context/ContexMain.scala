@@ -22,10 +22,8 @@ object ContextMain extends Logger {
     val file_name = "/home/narayana/var/log/oslog/RFM.log"
     val mps = "aruba/aruba/podv1"
     val loadid = 1234
-    Thread.sleep(20000)
     contextSupervisor ! LoadidToContext(loadid,mps)
     println("loaid to context create sent for "+loadid)
-    Thread.sleep(20000)
     val deletefile:Future[Boolean] = (contextSupervisor ? DeleteFile(file_name:String,mps:String,loadid)).mapTo[Boolean]
     val result2 = Await.result(deletefile, 1 minutes)
     println(s"sent delete file pattern $file_name resut  "+result2)

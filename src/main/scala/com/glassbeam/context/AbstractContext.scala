@@ -125,7 +125,7 @@ abstract  class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractC
   }
 
   def evalUncompressLevel(wefa: WatContextArguments):Int = {
-    println(s"received get max Uncompress level method for "+wefa.file_name+" for mps "+wefa.mps)
+    //println(s"received get max Uncompress level method for "+wefa.file_name+" for mps "+wefa.mps)
     val rhsdepthmatch = rhsSplit.get
     var bfound = false
     var bundle_depth = 5
@@ -144,7 +144,7 @@ abstract  class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractC
     }else{
       UncompressLevel.logger.error(s"Uncompressel Level pattern has too many matches for mps ${wefa.mps} for filename ${wefa.file_name}")
     }
-    println(s"for file name ${wefa.file_name} bundle depth is "+bundle_depth)
+    //println(s"for file name ${wefa.file_name} bundle depth is "+bundle_depth)
     bundle_depth
   }
 

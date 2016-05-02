@@ -29,7 +29,7 @@ class ContextSupervisor extends Actor with Logger {
 
   override def preStart() = {
     initializeAllMPS()
-    println("in context supervisor prestart")
+   // println("in context supervisor prestart")
   }
 
   private def getActorname(mps:String)={"context_"+alphanumeric(mps)}
@@ -74,7 +74,7 @@ class ContextSupervisor extends Actor with Logger {
       val childActorname = getActorname(mps)
       context.child(childActorname) match {
         case Some(mpsContextActor) =>
-          println("create loadid to context message receieved in supervisor")
+          //println("create loadid to context message receieved in supervisor")
           mpsContextActor.forward(create_context)
         case None =>
           logger.error(s"child actor of mps ${mps} not found")
