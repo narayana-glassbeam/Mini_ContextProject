@@ -15,6 +15,11 @@ object ContextCases {
     def loadid:Long
   }
 
+  trait LoaderContext extends Context {
+    def fileName:String
+    def mps:String
+    def loadid:Long
+  }
 
   case class LoadidToContext(loadid:Long,mps:String)
 
@@ -36,5 +41,7 @@ object ContextCases {
   case class MostRecentFile(fileName:String, mps:String,loadid:Long) extends WatcherContext
   case class ExtensibilityFile(fileName:String, mps:String,loadid:Long) extends WatcherContext
   case class UncompressBundleDepth(fileName:String,mps:String,loadid:Long) extends WatcherContext
+
+  case class file_eval(fileName:String,mps:String,loadid:Long) extends LoaderContext
 
 }

@@ -1,7 +1,10 @@
 package com.glassbeam.context
 
+import java.io.File
+
 import akka.actor.{Actor, Props}
 import com.glassbeam.context.ContextCases._
+import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.Logger
 
 import scala.collection.immutable.HashMap
@@ -16,7 +19,7 @@ object LoadIdToContext {
 
 }
 
-class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractWatcherContext]],loadid:Long,emps:String) extends Actor with Logger {
+class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
 
   private val logger = Logging(this)
 
@@ -35,6 +38,28 @@ class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatc
         filematched
     }
 
+  }
+
+  def eval_Context(mps:String,loadid:Long,filename:String):ContextReason = {
+    val file_eval:File = new File(filename)
+    var cr = ContextReason(HashMap[String, String](), "")
+    val contextInstances = mutableLoaderFunction.get(mps).get
+    contextInstances.foreach(f => println("lc name "+f.arg.context))
+    println("loader context instances length "+contextInstances.length)
+    for(context_instance <- contextInstances;if cr.reason.isEmpty){
+      try {
+        println(" in eval context for context instance "+context_instance.arg.context)
+        val cefa = ContextExecFnArguments(cr, file_eval, loadid)
+        cr = context_instance.execute(cefa)
+        println(" context reason context strings "+cr.contextStrings.mkString("\r\n")+" context string length "+cr.contextStrings.size)
+      }catch {
+        case e:Exception =>
+          val err = s"exception while processing context [Class Args: ${context_instance.arg}] [Execute Args: $cr]"
+          cr.copy(reason = cr.reason + err, failure = Some(ContextExecFailure))
+          logger.error(e,mps,err)
+      }
+    }
+    cr
   }
 
   def receive = {
@@ -68,6 +93,7 @@ class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatc
       }
       sender ! depth
 
-    //case file_eval(filename:File,mps,loadid)
+    case file_eval(filename,mps,loadid) => sender ! eval_Context(mps,loadid,filename)
+
   }
 }

@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import akka.Done
 import akka.actor.{Actor, Props}
-import com.glassbeam.context.ContextCases.{InitializeContext, LoadidToContext, WatcherContext}
+import com.glassbeam.context.ContextCases.{InitializeContext, LoaderContext, LoadidToContext, WatcherContext}
 import com.glassbeam.model.{ContextTableDao, Logger}
 
 import scala.collection.concurrent
@@ -65,8 +65,8 @@ class ContextSupervisor extends Actor with Logger {
         val childActorname = ceval_name(msg.mps)
           //getActorname(msg.mps)
         context.child(childActorname) match {
-            case Some(mpsContextActor) =>
-                mpsContextActor.forward(msg)
+            case Some(loadidContextActor) =>
+                loadidContextActor.forward(msg)
             case None =>
                 logger.error(s"child actor of mps ${msg.mps} not found")
         }
@@ -78,6 +78,17 @@ class ContextSupervisor extends Actor with Logger {
           mpsContextActor.forward(create_context)
         case None =>
           logger.error(s"child actor of mps ${mps} not found")
+      }
+
+    case lc:LoaderContext =>
+      val childActorname = ceval_name(lc.mps)
+      //getActorname(msg.mps)
+      context.child(childActorname) match {
+        case Some(loadidContextActor) =>
+          println("in eval loadid to context ")
+          loadidContextActor.forward(lc)
+        case None =>
+          logger.error(s"child actor of mps ${lc.mps} not found")
       }
 
     case Done => logger.info("Done")

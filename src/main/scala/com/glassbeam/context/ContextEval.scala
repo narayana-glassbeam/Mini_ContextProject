@@ -163,6 +163,15 @@ class ContextEval(emps: String,mContext:String,immContext:String) extends Actor 
           logger.error(s"child actor of mps ${msg.mps} not found")
       }
 
+    case lc:LoaderContext =>
+      import com.glassbeam.context.LoadIdToContext._
+      val childActorname = ltc_name(lc.loadid)
+      context.child(childActorname) match {
+        case Some(loadidContextActor) =>
+          loadidContextActor.forward(lc)
+        case None =>
+          logger.error(s"child actor of mps ${lc.mps} for loadid ${lc.loadid} not found")
+      }
 
     case x =>
       logger.error(s"Unknown ContextEval message $x")
