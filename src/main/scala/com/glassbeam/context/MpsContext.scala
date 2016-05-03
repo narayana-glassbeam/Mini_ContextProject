@@ -115,17 +115,14 @@ class ContextEval(emps: String,mContext:String,immContext:String) extends Actor 
             logger.info(emps, s"matched as simple statement, key = $emps, line = $linenum, context = $context, context-class = ${loader_statm.getClass.getName}")
             matchedSomething = true
             //println("in parse context "+context_line)
-            println("in loader stat  "+loader_statm.isAssignment)
             if (mutableLoaderFunction.contains(emps)) {
               val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               var contextVec = mutableLoaderFunction.get(emps).get
               contextVec = contextVec :+ coninst
               mutableLoaderFunction(emps) = contextVec
-              println("in loader stat if added to map  "+loader_statm.isAssignment)
             } else {
               val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
               mutableLoaderFunction += emps -> Vector(coninst)
-              println("in loader stat else added to map  "+loader_statm.isAssignment)
             }
           }
         }catch {

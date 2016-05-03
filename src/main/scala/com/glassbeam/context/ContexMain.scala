@@ -25,13 +25,10 @@ object ContextMain extends Logger {
     val mps = "aruba/aruba/podv1"
     val loadid = 1234
     contextSupervisor ! LoadidToContext(loadid,mps)
-    println("loaid to context create sent for "+loadid)
     val deletefile:Future[Boolean] = (contextSupervisor ? DeleteFile(file_name,mps,loadid)).mapTo[Boolean]
     val result2 = Await.result(deletefile, 1 minutes)
-    println(s"sent delete file pattern $file_name resut  "+result2)
     val bundle_depth:Future[Int] = (contextSupervisor ? UncompressBundleDepth(file_name,mps,loadid)).mapTo[Int]
     val result3 = Await.result(bundle_depth, 5 minutes)
-    println("received bundle depth "+result3)
 
     val context_result:Future[ContextReason] = (contextSupervisor ? file_eval(file_name,mps,loadid)).mapTo[ContextReason]
     context_result.onComplete{
@@ -40,7 +37,6 @@ object ContextMain extends Logger {
         val crreason = cr.reason
         val crbp = cr.bproperties.getOrElse("")
         val crfail = cr.failure.getOrElse("")
-        println("context strings "+crstrings.mkString("\n")+" cr reason "+crreason+" cr bp "+crbp+" crfail "+crfail)
       case Failure(ex) =>
         println("exception " +ex)
 

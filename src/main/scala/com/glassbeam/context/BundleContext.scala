@@ -45,13 +45,10 @@ class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatc
     var cr = ContextReason(HashMap[String, String](), "")
     val contextInstances = mutableLoaderFunction.get(mps).get
     contextInstances.foreach(f => println("lc name "+f.arg.context))
-    println("loader context instances length "+contextInstances.length)
     for(context_instance <- contextInstances;if cr.reason.isEmpty){
       try {
-        println(" in eval context for context instance "+context_instance.arg.context)
         val cefa = ContextExecFnArguments(cr, file_eval, loadid)
         cr = context_instance.execute(cefa)
-        println(" context reason context strings "+cr.contextStrings.mkString("\r\n")+" context string length "+cr.contextStrings.size)
       }catch {
         case e:Exception =>
           val err = s"exception while processing context [Class Args: ${context_instance.arg}] [Execute Args: $cr]"

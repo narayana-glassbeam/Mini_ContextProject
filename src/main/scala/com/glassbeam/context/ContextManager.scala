@@ -82,10 +82,8 @@ class ContextSupervisor extends Actor with Logger {
 
     case lc:LoaderContext =>
       val childActorname = ceval_name(lc.mps)
-      //getActorname(msg.mps)
       context.child(childActorname) match {
         case Some(loadidContextActor) =>
-          println("in eval loadid to context ")
           loadidContextActor.forward(lc)
         case None =>
           logger.error(s"child actor of mps ${lc.mps} not found")
