@@ -1,5 +1,7 @@
 package com.glassbeam.context
 
+import akka.actor.{ActorRef, Props}
+
 /**
   * Created by narayana on 22/4/16.
   */
@@ -9,27 +11,25 @@ object ContextCases {
 
   sealed trait Context
 
-  trait WatcherContext extends Context {
-    def fileName:String
-    def mps:String
-    def loadid:Long
+  trait ActorCreationSupport {
+
+    def createChild(props:Props,name:String):ActorRef
+
+    def forward(msg:Context,actor_name:String)
   }
 
-  trait LoaderContext extends Context {
+  trait MPSRequest extends Context { def mps:String }
+  case class CreateBundleContext(loadid:Long,mps:String) extends MPSRequest
+  case class InitializeContext(mps:String) extends MPSRequest
+
+
+  trait BundleEval extends MPSRequest {
     def fileName:String
-    def mps:String
     def loadid:Long
   }
+  trait WatcherContext extends BundleEval
+  trait LoaderContext extends BundleEval
 
-  case class LoadidToContext(loadid:Long,mps:String)
-
-  case object ContextLoaderEval extends Context
-  case object ContextWatcherBundleEval extends Context
-  case object ContextWatcherFileEval extends Context
-  case object ContextLoaderWatcherEval extends Context
-  case object ContextIsChanged extends Context
-  case object ContextReload extends Context
-  case object InitializeContext extends Context
 
   case class DeleteFile(fileName:String, mps:String,loadid:Long) extends WatcherContext
   case class SkipFile(fileName:String, mps:String,loadid:Long) extends WatcherContext

@@ -1,6 +1,6 @@
 package com.glassbeam.context
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorContext, ActorRef, Props}
 import com.glassbeam.context.ContextCases._
 import com.glassbeam.model.Logger
 import com.glassbeam.model.StartupConfig._
@@ -11,15 +11,34 @@ import scala.collection.immutable.HashMap
   * Created by bharadwaj on 29/03/16.
   */
 
-object ContextEval extends Logger {
-  import com.glassbeam.context.ContextHelpers._
+trait MPSCCreationSupport extends ActorCreationSupport  with Logger {
+  this: MpsContext =>
 
   val logger = Logging(this)
 
-  def ceval_name(mps:String) = "context_"+alphanumeric(mps)
+  def context: ActorContext
+
+  def createChild(props: Props, name: String): ActorRef = context.actorOf(props, name)
+
+  def forward(msg:Context, actor_name: String) = {
+    context.child(actor_name) match {
+      case Some(loadidContextActor) =>
+        loadidContextActor.forward(msg)
+      case None =>
+        logger.error(s"child actor for this messsage ${msg} not found")
+    }
+
+  }
+}
+
+
+object MpsContext  {
+  import com.glassbeam.context.ContextHelpers._
+
+  def mpsContext_name(mps:String) = "context_"+alphanumeric(mps)
 
   def props(mps:String,mutableLines:String,immutableLines:String) = {
-    (Props(classOf[ContextEval],mps,mutableLines,immutableLines),ceval_name(mps))
+    (Props(classOf[MpsContext],mps,mutableLines,immutableLines),mpsContext_name(mps))
   }
 
   private val watcher_statements: Array[WatcherContextStatement] = Array(DelPat,SkipPat,IncVaultPat,IncParsePat,BinaryPat,TextPat,ReversePat,MostRecPat,ProcessFilePat,UncompressLevel)
@@ -40,8 +59,9 @@ object ContextEval extends Logger {
 }
 
 // ToDo: this Actor should be backed by a Router
-class ContextEval(emps: String,mContext:String,immContext:String) extends Actor with ContextLines {
-  import ContextEval._
+class MpsContext(emps: String,mContext:String,immContext:String) extends Actor with ContextLines with MPSCCreationSupport {
+  import MpsContext._
+  import com.glassbeam.context.BundleContext._
 
   val splitKeys = emps.split(filesep)
   val (customer,manufacturer,product,schema) = ("",splitKeys(0), splitKeys(1), splitKeys(2))
@@ -139,36 +159,17 @@ class ContextEval(emps: String,mContext:String,immContext:String) extends Actor 
 
   def receive = {
 
-    case InitializeContext =>
+    case InitializeContext(mps) =>
       val (mLines,immLines) = getContextLines(mContext,immContext)
       parseContext(mLines,immLines)
 
-    case LoadidToContext(loadid,mps) =>
-      import com.glassbeam.context.LoadIdToContext._
+    case CreateBundleContext(loadid,mps) =>
       val immwfmap = HashMap(mutableWatcherFunction.toSeq:_*)
       val immlfmap = HashMap(mutableLoaderFunction.toSeq:_*)
-      val child_props = props(loadid,mps,immwfmap,immlfmap)
-      val loadid_context = context.actorOf(child_props._1,child_props._2)
+      val child_props = BundleContext.props(loadid,mps,immwfmap,immlfmap)
+      createChild(child_props._1,child_props._2)
 
-    case msg:WatcherContext =>
-      import com.glassbeam.context.LoadIdToContext._
-      val childActorname = ltc_name(msg.loadid)
-      context.child(childActorname) match {
-        case Some(loadidContextActor) =>
-          loadidContextActor.forward(msg)
-        case None =>
-          logger.error(s"child actor of mps ${msg.mps} not found")
-      }
-
-    case lc:LoaderContext =>
-      import com.glassbeam.context.LoadIdToContext._
-      val childActorname = ltc_name(lc.loadid)
-      context.child(childActorname) match {
-        case Some(loadidContextActor) =>
-          loadidContextActor.forward(lc)
-        case None =>
-          logger.error(s"child actor of mps ${lc.mps} for loadid ${lc.loadid} not found")
-      }
+    case mpsEvalMsg:BundleEval => forward(mpsEvalMsg,bundleContext_name(mpsEvalMsg.loadid))
 
     case x =>
       logger.error(s"Unknown ContextEval message $x")

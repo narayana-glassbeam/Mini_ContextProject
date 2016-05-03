@@ -9,17 +9,17 @@ import com.glassbeam.model.Logger
 
 import scala.collection.immutable.HashMap
 
-object LoadIdToContext {
+object BundleContext {
 
-  def ltc_name(loadid:Long) = "context_"+loadid
+  def bundleContext_name(loadid:Long) = "context_"+loadid
 
   def props(loadid:Long, mps:String, MWCache:HashMap[String, Vector[AbstractWatcherContext]], MLCache:HashMap[String, Vector[AbstractLoaderContext]]) = {
-    (Props(classOf[LoadIdToContext],MWCache,MLCache,loadid,mps),ltc_name(loadid))
+    (Props(classOf[BundleContext],MWCache,MLCache,loadid,mps),bundleContext_name(loadid))
   }
 
 }
 
-class LoadIdToContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
+class BundleContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
 
   private val logger = Logging(this)
 
