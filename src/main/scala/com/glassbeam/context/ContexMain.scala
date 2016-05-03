@@ -52,8 +52,3 @@ object ContextMain extends Logger {
 
 }
 
-object Init extends Enumeration {
-  type Init = Value
-  val Run, Test, TestWithH2, TestWithCassandra, TestWithSolr = Value
-  var inittype = Run
-}

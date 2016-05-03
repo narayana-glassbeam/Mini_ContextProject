@@ -40,7 +40,6 @@ trait CSCreationSupport extends  Logger {
 
 }
 
-
 class ContextSupervisor extends Actor with CSCreationSupport {
   import com.glassbeam.context.MpsContext._
 

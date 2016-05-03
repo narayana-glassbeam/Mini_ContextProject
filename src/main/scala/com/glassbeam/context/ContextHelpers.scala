@@ -11,6 +11,13 @@ import scala.collection.immutable
 import scala.collection.immutable.HashMap
 import scala.io.Codec
 
+
+object Init extends Enumeration {
+  type Init = Value
+  val Run, Test, TestWithH2, TestWithCassandra, TestWithSolr = Value
+  var inittype = Run
+}
+
 object ContextHelpers {
 
   val BPROPERTIES = "b.properties"
