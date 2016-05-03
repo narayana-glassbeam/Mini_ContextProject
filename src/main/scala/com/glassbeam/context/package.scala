@@ -1,7 +1,5 @@
 package com.glassbeam.context
 
-import akka.actor.{ActorRef, Props}
-
 /**
   * Created by narayana on 22/4/16.
   */
@@ -11,17 +9,16 @@ object ContextCases {
 
   sealed trait Context
 
-  trait ActorCreationSupport {
-
-    def createChild(props:Props,name:String):ActorRef
-
-    def forward(msg:Context,actor_name:String)
-  }
+//  trait ActorCreationSupport {
+//
+//    def createChild(props:Props,name:String):ActorRef
+//
+//    def forward[ReqTyp <: Context](msg:ReqTyp,actor_name:String)
+//  }
 
   trait MPSRequest extends Context { def mps:String }
-  case class CreateBundleContext(loadid:Long,mps:String) extends MPSRequest
   case class InitializeContext(mps:String) extends MPSRequest
-
+  case class CreateBundleContext(loadid:Long,mps:String) extends MPSRequest
 
   trait BundleEval extends MPSRequest {
     def fileName:String

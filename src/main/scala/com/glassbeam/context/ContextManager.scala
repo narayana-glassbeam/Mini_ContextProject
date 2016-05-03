@@ -19,7 +19,7 @@ object ContextSupervisor {
 
 }
 
-trait CSCreationSupport extends ActorCreationSupport  with Logger {
+trait CSCreationSupport extends  Logger {
   this: ContextSupervisor =>
 
   val logger = Logging(this)
@@ -28,7 +28,7 @@ trait CSCreationSupport extends ActorCreationSupport  with Logger {
 
   def createChild(props: Props, name: String): ActorRef = context.actorOf(props, name)
 
-  def forward(msg:Context, actor_name: String) = {
+  def forward[MPSType <: MPSRequest](msg:MPSType, actor_name: String) = {
 
     context.child(actor_name) match {
       case Some(loadidContextActor) =>
@@ -74,7 +74,7 @@ class ContextSupervisor extends Actor with CSCreationSupport {
 
   def receive = {
 
-    case csForwardMsg:MPSRequest => forward(csForwardMsg,mpsContext_name(csForwardMsg.mps))
+    case csForwardMsg:MPSRequest => forward[MPSRequest](csForwardMsg,mpsContext_name(csForwardMsg.mps))
 
     case Done => logger.info("Done")
 

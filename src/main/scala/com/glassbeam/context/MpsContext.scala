@@ -11,7 +11,7 @@ import scala.collection.immutable.HashMap
   * Created by bharadwaj on 29/03/16.
   */
 
-trait MPSCCreationSupport extends ActorCreationSupport  with Logger {
+trait MPSCCreationSupport extends  Logger {
   this: MpsContext =>
 
   val logger = Logging(this)
@@ -20,7 +20,7 @@ trait MPSCCreationSupport extends ActorCreationSupport  with Logger {
 
   def createChild(props: Props, name: String): ActorRef = context.actorOf(props, name)
 
-  def forward(msg:Context, actor_name: String) = {
+   def forward[BundleTyp <: MPSRequest](msg:BundleTyp, actor_name: String) = {
     context.child(actor_name) match {
       case Some(loadidContextActor) =>
         loadidContextActor.forward(msg)
@@ -169,7 +169,7 @@ class MpsContext(emps: String,mContext:String,immContext:String) extends Actor w
       val child_props = BundleContext.props(loadid,mps,immwfmap,immlfmap)
       createChild(child_props._1,child_props._2)
 
-    case mpsEvalMsg:BundleEval => forward(mpsEvalMsg,bundleContext_name(mpsEvalMsg.loadid))
+    case mpsEvalMsg:BundleEval => forward[BundleEval](mpsEvalMsg,bundleContext_name(mpsEvalMsg.loadid))
 
     case x =>
       logger.error(s"Unknown ContextEval message $x")
