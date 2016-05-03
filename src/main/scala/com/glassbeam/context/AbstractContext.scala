@@ -55,7 +55,6 @@ trait ParsableObtainer {
   val parsableObtainer = (classname:String) => getParsable(classname)
 }
 
-
 trait WatcherContextStatement extends AbstractContextObject {
   val name:String
   val isAssignment = false

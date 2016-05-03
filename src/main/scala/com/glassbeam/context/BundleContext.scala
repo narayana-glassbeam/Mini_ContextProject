@@ -19,7 +19,7 @@ object BundleContext {
 
 }
 
-class BundleContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],mutableLoaderFunction:HashMap[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
+class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContext]],LoaderFunction:HashMap[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
 
   private val logger = Logging(this)
 
@@ -27,7 +27,7 @@ class BundleContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatche
   def isFileMatched(fileName:String,ContextPatternName:String):Boolean = {
     val wca = WatContextArguments(fileName,emps)
     var filematched = false
-    mutableWatcherFunction.get(ContextPatternName) match {
+    WatcherFunction.get(ContextPatternName) match {
       case Some(instances) =>
         instances.foreach(inst =>  if(!filematched) {
           filematched = inst.evalFileMatchesPattern(wca)
@@ -43,7 +43,7 @@ class BundleContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatche
   def eval_Context(mps:String,loadid:Long,filename:String):ContextReason = {
     val file_eval:File = new File(filename)
     var cr = ContextReason(HashMap[String, String](), "")
-    val contextInstances = mutableLoaderFunction.get(mps).get
+    val contextInstances = LoaderFunction.get(mps).get
     contextInstances.foreach(f => println("lc name "+f.arg.context))
     for(context_instance <- contextInstances;if cr.reason.isEmpty){
       try {
@@ -82,7 +82,7 @@ class BundleContext(mutableWatcherFunction:HashMap[String, Vector[AbstractWatche
     case UncompressBundleDepth(fileName,mps,loadid) =>
       val wca = WatContextArguments(fileName,emps)
       var depth:Int = 0
-      mutableWatcherFunction.get(UncompressLevel.name) match {
+      WatcherFunction.get(UncompressLevel.name) match {
         case Some(insts) =>
           insts.foreach(uncompressInst =>{ depth = uncompressInst.evalUncompressLevel(wca)})
         case None =>

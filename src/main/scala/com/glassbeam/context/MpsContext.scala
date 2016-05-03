@@ -62,6 +62,7 @@ object MpsContext  {
 class MpsContext(emps: String,mContext:String,immContext:String) extends Actor with ContextLines with MPSCCreationSupport {
   import MpsContext._
   import com.glassbeam.context.BundleContext._
+  import scala.collection.mutable.{HashMap => MutableH}
 
   val splitKeys = emps.split(filesep)
   val (customer,manufacturer,product,schema) = ("",splitKeys(0), splitKeys(1), splitKeys(2))
@@ -73,9 +74,9 @@ class MpsContext(emps: String,mContext:String,immContext:String) extends Actor w
   var mutableVariableCache: Map[String, Array[AbstractContextClass]] = Map()
 
   // mps to mutable function abstract object (which will be evaluated)
-  val mutableLoaderFunction: scala.collection.mutable.HashMap[String, Vector[AbstractLoaderContext]] = scala.collection.mutable.HashMap.empty[String,Vector[AbstractLoaderContext]]
+  val mutableLoaderFunction: MutableH[String, Vector[AbstractLoaderContext]] = MutableH.empty[String,Vector[AbstractLoaderContext]]
 
-  val mutableWatcherFunction:scala.collection.mutable.HashMap[String, Vector[AbstractWatcherContext]] =  scala.collection.mutable.HashMap.empty[String,Vector[AbstractWatcherContext]]
+  val mutableWatcherFunction:MutableH[String, Vector[AbstractWatcherContext]] = MutableH.empty[String,Vector[AbstractWatcherContext]]
 
   def assignMatch(defn: AbstractContextObject, context: String): Boolean = {
     val rhsOption: Option[List[String]] = defn.fullRegex.unapplySeq(context)
@@ -89,6 +90,7 @@ class MpsContext(emps: String,mContext:String,immContext:String) extends Actor w
     }
   }
 
+  // ToDo: The Impelemenatation of this is improved as things get clear or at the end of completion we should improve it as much as we can
   def parseContext(mConLines:Array[String],immConLines:Array[String]) = {
     // ToDo: Query context from H2 and populate immutableVariableCache, mutableVariableCache and mutableFunctionCache
     // ToDo: Traverse the list of H2 context lines and match the fullRegex of DeleteFile object and store the DeleteFile object in mutableFunctionCache
