@@ -40,7 +40,7 @@ object ContextMain extends Logger {
         val crreason = cr.reason
         val crbp = cr.bproperties.getOrElse("")
         val crfail = cr.failure.getOrElse("")
-        println(" context Strings are "+crstrings.mkString("\r\n"))
+        //println(" context Strings are "+crstrings.mkString("\r\n"))
       case Failure(ex) =>
         println("exception " +ex)
 

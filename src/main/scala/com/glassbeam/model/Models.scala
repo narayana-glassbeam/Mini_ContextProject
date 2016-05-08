@@ -3,18 +3,16 @@ package com.glassbeam.model
 import java.io.File
 import java.sql.Timestamp
 
-import com.glassbeam.h2utils.LoaderTable
-import com.glassbeam.model.LoaderDao._
-
-import scala.slick.driver.H2Driver.simple._
-import scala.slick.jdbc.JdbcBackend.Database.dynamicSession
-import scala.slick.util.TupleMethods._
 import com.github.tototoshi.slick.H2JodaSupport._
-import com.glassbeam.h2utils._
+import com.glassbeam.h2utils.{LoaderTable, _}
 import com.glassbeam.model.AlertsFailure.AlertsFailure
 import com.glassbeam.model.BundleSignatureState.BundleSignatureState
 import com.glassbeam.model.CassandraFailure.CassandraFailure
 import com.glassbeam.model.ContextFailure._
+
+import scala.slick.driver.H2Driver.simple._
+import scala.slick.jdbc.JdbcBackend.Database.dynamicSession
+import scala.slick.util.TupleMethods._
 //import com.glassbeam.model.Counters._
 import com.glassbeam.model.ParseFailure.ParseFailure
 import com.glassbeam.model.ProcessingState.ProcessingState
@@ -711,6 +709,7 @@ object SplTableDao extends DatabaseAccess {
 }
 
 object ContextTableDao extends DatabaseAccess {
+
   private val ContextTable = TableQuery[ContextTable]
 
   def DDL = ContextTable.ddl
@@ -725,7 +724,7 @@ object ContextTableDao extends DatabaseAccess {
   }
 
   def getAllKeys(): Seq[String] = withDatabasePool withDynSession {
-    ContextTable.map(c => c.key).run.filterNot(key => key.trim.equals("loader"))
+    ContextTable.map(c => c.key).run.filterNot(key => key.trim.equals("Common"))
   }
 
   def getModifiedContext(key:String,ts:Timestamp) = withDatabasePool withDynSession {
@@ -735,6 +734,7 @@ object ContextTableDao extends DatabaseAccess {
   def deleteAll() = withDatabasePool withDynSession {
     ContextTable.delete
   }
+
 }
 
 object ValidateTableDao extends DatabaseAccess {

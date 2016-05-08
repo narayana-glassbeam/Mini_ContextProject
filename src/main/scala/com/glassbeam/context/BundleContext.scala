@@ -44,7 +44,7 @@ class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContex
     val file_eval:File = new File(filename)
     var cr = ContextReason(HashMap[String, String](), "")
     val contextInstances = LoaderFunction.get(mps).get
-    contextInstances.foreach(f => println("lc name "+f.arg.context))
+    //contextInstances.foreach(f => println("lc name "+f.arg.context))
     for(context_instance <- contextInstances;if cr.reason.isEmpty){
       try {
         val cefa = ContextExecFnArguments(cr, file_eval, loadid)

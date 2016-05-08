@@ -26,6 +26,7 @@ object ContextHelpers {
   val BID = "b.id"
   val hh_r = """\{(.*?)\}""".r
   val ctx_r = """context.(.*)""".r
+  val assign = """(.+?)=(.+?)""".r
 
   val extensibility_cache = new ConcurrentHashMap[String, Parsable]() asScala
 

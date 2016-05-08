@@ -15,7 +15,7 @@ case class TextFileClass(carg: ContextClassArguments) extends AbstractWatcherCon
 case class ReverseFileClass(carg: ContextClassArguments) extends AbstractWatcherContext(carg,ReversePat) with MutableWatcherFunction
 case class MostRecentFileClass(carg: ContextClassArguments) extends AbstractWatcherContext(carg,MostRecPat) with MutableWatcherFunction
 case class ProcessFileClass(carg: ContextClassArguments) extends AbstractWatcherContext(carg,ProcessFilePat) with MutableWatcherFunction
-class UncompressLevelClass(carg: ContextClassArguments) extends AbstractWatcherContext(carg,UncompressLevel) with MutableWatcherFunction
+case class UncompressLevelClass(carg: ContextClassArguments) extends AbstractWatcherContext(carg,UncompressLevel) with MutableWatcherFunction
 //
 object DelPat extends WatcherContextStatement {
   override val name = "DeletePattern"

@@ -421,7 +421,7 @@ class SDF2EPOCH(carg: ContextClassArguments) extends AbstractLoaderContext(carg,
   epoch to SDF
  */
 object EPOCH2SDF extends LoaderContextAssignment {
-  val rhsRegex = """^EPOCH2SDF\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
+  val rhsRegex = """^epoch2sdf\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
 
   def getObject(carg: ContextClassArguments) = new EPOCH2SDF(carg)
 }
@@ -859,9 +859,9 @@ class ProcessFileToContext(carg: ContextClassArguments,getParsable: String => Pa
   def execute(cefa: ContextExecFnArguments): ContextReason = evalAssignment(processFileToContext, cefa)
 }
 
-//trait ParsableObtainer {
-//  val parsableObtainer = (classname:String) => getParsable(classname)
-//}
+trait ParsableObtainer {
+  val parsableObtainer = (classname:String) => getParsable(classname)
+}
 /*
   ProcessBundleToContext
  */

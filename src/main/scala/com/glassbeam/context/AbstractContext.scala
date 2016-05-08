@@ -10,7 +10,6 @@ import com.glassbeam.context.ContextSection.ContextSection
 import com.glassbeam.context.ContextStage.ContextStage
 import com.glassbeam.failuredefs.MsgTemplate
 import com.glassbeam.model.ContextFailure._
-import com.glassbeam.context.ContextHelpers._
 import com.glassbeam.model.Logger
 
 import scala.collection.immutable.HashMap
@@ -24,7 +23,7 @@ case class WatContextArguments(file_name:String,mps:String)
 
 object ContextSection extends Enumeration {
   type ContextSection = Value
-  val MutableFunction, MutableVariable, ImmutableVariable = Value
+  val MutableFunction, ImmutableState = Value
 }
 
 object ContextStage extends Enumeration {
@@ -51,8 +50,14 @@ trait MutableWatcherFunction {
   val contextStage: ContextStage = ContextStage.Watcher
 }
 
-trait ParsableObtainer {
-  val parsableObtainer = (classname:String) => getParsable(classname)
+trait FrozenState {
+  val contextSection:ContextSection = ContextSection.ImmutableState
+  val contextStage:ContextStage = ContextStage.Loader
+}
+
+trait FrozenContextAssignment extends AbstractContextObject {
+  val isAssignment = true
+  val fullRegex = """(.+?)=(.+?)""".r
 }
 
 trait WatcherContextStatement extends AbstractContextObject {
@@ -80,7 +85,7 @@ abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractCo
   val contextSection: ContextSection
   val contextStage: ContextStage
 
-  def getLhsRhsRegex(ACO:AbstractContextObject,carg: ContextClassArguments) = {
+  def getLhsRhsRegex = {
     val (lhs, rhsSplit) = if (ACO.isAssignment) {
       ACO.fullRegex.unapplySeq(carg.context) match {
         case None =>
@@ -105,7 +110,7 @@ abstract class AbstractContextClass(carg: ContextClassArguments, ACO: AbstractCo
 
 abstract  class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractContextObject) extends AbstractContextClass(warg:ContextClassArguments,AWCO:AbstractContextObject) {
 
-  val (lhs, rhsSplit) =  getLhsRhsRegex(AWCO,warg)
+  val (lhs, rhsSplit) =  getLhsRhsRegex
 
   def evalFileMatchesPattern(wefa: WatContextArguments):Boolean = {
     // ToDo: Create the regex and match it with the filename
@@ -151,7 +156,7 @@ abstract  class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractC
 
 abstract class AbstractLoaderContext(carg: ContextClassArguments, ACO: AbstractContextObject) extends AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject) {
 
-  val (lhs, rhsSplit) =  getLhsRhsRegex(ACO,carg)
+  val (lhs, rhsSplit) =  getLhsRhsRegex
 
   lazy val CMPS: String =
     if (carg.customer == null) "loader"

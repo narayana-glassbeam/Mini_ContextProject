@@ -17,7 +17,7 @@ object ContextCases {
 //  }
 
   trait MPSRequest extends Context { def mps:String }
-  case class InitializeContext(mps:String) extends MPSRequest
+  case class buildContext(mps:String,mMpsContextLines:Array[String]) extends MPSRequest
   case class CreateBundleContext(loadid:Long,mps:String) extends MPSRequest
 
   trait BundleEval extends MPSRequest {
