@@ -1,7 +1,7 @@
 package com.glassbeam.context
 
 import akka.actor.{Actor, ActorContext, ActorRef, Props}
-import com.glassbeam.context.ContextCases._
+import com.glassbeam.context.Context._
 import com.glassbeam.model.Logger
 import com.glassbeam.model.StartupConfig._
 
@@ -35,7 +35,7 @@ trait MPSCCreationSupport extends  Logger {
 object MpsContext  {
   import com.glassbeam.context.ContextHelpers._
 
-  def mpsContext_name(mps:String) = "context_"+alphanumeric(mps)
+  def name(mps:String) = "context_"+alphanumeric(mps)
 
   def props(mps:String,immContextLines:Array[String]):Props = Props(classOf[MpsContext],mps,immContextLines)
 
@@ -73,33 +73,39 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
   var mutableVariableCache: Map[String, Array[AbstractContextClass]] = Map()
 
   // mps to mutable function abstract object (which will be evaluated)
-  val mutableLoaderFunction: MutableH[String, Vector[AbstractLoaderContext]] = MutableH.empty[String,Vector[AbstractLoaderContext]]
+  val loaderInstances: MutableH[String, Vector[AbstractLoaderContext]] = MutableH.empty[String,Vector[AbstractLoaderContext]]
 
-  val mutableWatcherFunction:MutableH[String, Vector[AbstractWatcherContext]] = MutableH.empty[String,Vector[AbstractWatcherContext]]
+  val watcherInstances:MutableH[String, Vector[AbstractWatcherContext]] = MutableH.empty[String,Vector[AbstractWatcherContext]]
+
+  val frozenInstances:MutableH[String, Vector[AbstractLCPContext]] = MutableH.empty[String,Vector[AbstractLCPContext]]
 
   def addLCInstances(key:String,inst:AbstractLoaderContext) = {
-    if (mutableLoaderFunction.contains(emps)) {
-      //val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-      mutableLoaderFunction(emps) = mutableLoaderFunction.get(emps).get :+ inst
-      println("added context instance "+inst.lhs)
-
+    if (loaderInstances.contains(emps)) {
+      loaderInstances(emps) =loaderInstances.get(emps).get :+ inst
+      println("added Loader context instance "+inst.lhs)
     } else {
-      //val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-      mutableLoaderFunction += emps -> Vector(inst)
-      println("added context instance "+inst.lhs)
+      loaderInstances += emps -> Vector(inst)
+      println("added Loader context instance "+inst.lhs)
     }
   }
 
   def addWCInstances(key:String,inst:AbstractWatcherContext) = {
-    if (mutableWatcherFunction .contains(emps)) {
-      //val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-      mutableWatcherFunction (emps) = mutableWatcherFunction.get(emps).get :+ inst
-      println("added context instance "+inst.lhs)
-
+    if (watcherInstances.contains(emps)) {
+      watcherInstances(emps) = watcherInstances.get(emps).get :+ inst
+      println("added watcher context instance "+inst.lhs)
     } else {
-      //val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-      mutableWatcherFunction  += emps -> Vector(inst)
-      println("added context instance "+inst.lhs)
+      watcherInstances += emps -> Vector(inst)
+      println("added watcher context instance "+inst.lhs)
+    }
+  }
+
+  def addFCInstances(key:String,inst:AbstractLCPContext) = {
+    if (frozenInstances.contains(emps)) {
+      frozenInstances(emps) = frozenInstances.get(emps).get :+ inst
+      println("added watcher context instance "+inst.lhs)
+    } else {
+      frozenInstances += emps -> Vector(inst)
+      println("added watcher context instance "+inst.lhs)
     }
   }
 
@@ -118,18 +124,21 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
 //  val combineLines = solrLines ++ cassLines ++ S3Lines ++ immCommonLines ++ immMpsLines
 //    combineLines.foreach(line => println("combined line "+line))
 
-  def parseCassContext(conline:String):Boolean = {
-    import com.glassbeam.context.FrozenInstance._
+  immContextLines.foreach(line => {
+    println(" parsing immutable line "+line)
+    parseCassContext(line)})
 
-    val casstyp = FrozenType.getSubtype(FrozenType.Cassandra)
-    //println("solr string "+sorlstring)
+  def parseCassContext(conline:String):Boolean = {
+    import com.glassbeam.context.LCPInstance._
+
+    val casstyp = LCPType.getSubtype(LCPType.Cassandra)
     casstyp.values.foreach(cassval =>{
       val cassdef = casstyp.getDefinition(cassval)
       if(cassdef.rhsRegex.pattern.matcher(conline).matches()) {
-        val carg = ContextClassArguments(conline,0,customer,manufacturer,product,schema)
-        val froinstance = getFrozenInstance(carg,cassdef)
-        addLCInstances(casstyp.toString(),froinstance)
-        println(" cass rhs regex " + cassdef.rhsRegex + " cass context line " + conline + " matched ")
+        val carg = LCPClassArguments(conline,customer,manufacturer,product,schema)
+        val froinstance = getLcpContextObject(carg,cassdef)
+        addFCInstances(LCPType.Cassandra.toString,froinstance)
+        println("Cass typ "+LCPType.Cassandra+" cass rhs regex " + cassdef.rhsRegex + " cass context line " + conline + " matched ")
       }
     })
 
@@ -137,70 +146,60 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
   }
 
   def parseS3Context(conline:String):Boolean = {
-    import com.glassbeam.context.FrozenInstance._
-    val S3typ = FrozenType.getSubtype(FrozenType.S3)
-    //println("solr string "+sorlstring)
+    import com.glassbeam.context.LCPInstance._
+    val S3typ = LCPType.getSubtype(LCPType.S3)
     S3typ.values.foreach(S3val =>{
       val S3def = S3typ.getDefinition(S3val)
       if(S3def.rhsRegex.pattern.matcher(conline).matches()) {
-        val carg = ContextClassArguments(conline,0,customer,manufacturer,product,schema)
-        val froinstance = getFrozenInstance(carg,S3def)
-        addLCInstances(S3typ.toString(),froinstance)
-        println(" s3 rhs regex " + S3def.rhsRegex + " s3 context line " + conline + " matched ")
+        val carg = LCPClassArguments(conline,customer,manufacturer,product,schema)
+        val froinstance = getLcpContextObject(carg,S3def)
+        addFCInstances(LCPType.S3.toString(),froinstance)
+        println("Cass typ"+S3typ.toString()+" s3 rhs regex " + S3def.rhsRegex + " s3 context line " + conline + " matched ")
       }
     })
 
     true
   }
 
-
   def parseLcpContext(conline:String):Boolean = {
-    import com.glassbeam.context.FrozenInstance._
-    val Lcptyp = FrozenType.getSubtype(FrozenType.LCP)
-    //println("solr string "+sorlstring)
+    import com.glassbeam.context.LCPInstance._
+    val Lcptyp = LCPType.getSubtype(LCPType.Loader)
     Lcptyp.values.foreach(Lcpval =>{
       val Lcpdef = Lcptyp.getDefinition(Lcpval)
       if(Lcpdef.rhsRegex.pattern.matcher(conline).matches()) {
-        val carg = ContextClassArguments(conline,0,customer,manufacturer,product,schema)
-        val froinstance = getFrozenInstance(carg,Lcpdef)
-        addLCInstances(Lcptyp.toString(),froinstance)
-        println(" Lcp rhs regex " + Lcpdef.rhsRegex + " Lcp context line " + conline + " matched ")
+        val carg = LCPClassArguments(conline,customer,manufacturer,product,schema)
+        val froinstance = getLcpContextObject(carg,Lcpdef)
+        addFCInstances(LCPType.Loader.toString(),froinstance)
+        println("Cass typ"+Lcptyp.toString()+" Lcp rhs regex " + Lcpdef.rhsRegex + " Lcp context line " + conline + " matched ")
       }
     })
 
     true
   }
 
-
-
   def parseSolrContext(conline:String):Boolean ={
-    import com.glassbeam.context.FrozenInstance._
-    val solrtyp = FrozenType.getSubtype(FrozenType.Solr)
-    //println("solr string "+sorlstring)
+    import com.glassbeam.context.LCPInstance._
+    val solrtyp = LCPType.getSubtype(LCPType.Solr)
     solrtyp.values.foreach(solrval =>{
        val solrdef = solrtyp.getDefinition(solrval)
        if(solrdef.rhsRegex.pattern.matcher(conline).matches()) {
-         val carg = ContextClassArguments(conline,0,customer,manufacturer,product,schema)
-         val froinstance = getFrozenInstance(carg,solrdef)
-         addLCInstances(solrtyp.toString(),froinstance)
-        println(" solr rhs regex " + solrdef.rhsRegex + " sorl context line " + conline + " matched ")
+         val carg = LCPClassArguments(conline,customer,manufacturer,product,schema)
+         val froinstance = getLcpContextObject(carg,solrdef)
+         addFCInstances(LCPType.Solr.toString(),froinstance)
+        println("Cass typ"+solrtyp.toString()+" solr rhs regex " + solrdef.rhsRegex + " sorl context line " + conline + " matched ")
       }
     })
     true
   }
 
-
   def assignMatch(defn: AbstractContextObject, context: String): Boolean = {
     val rhsOption: Option[List[String]] = defn.fullRegex.unapplySeq(context)
-   // println(" rhsoption  "+rhsOption+" for context line "+context+" for def full regex "+defn.fullRegex)
     rhsOption match {
       case None => false
       case Some(rhs) =>
         rhs.length match {
           case 2 =>
-            //println(" in rhs match rhsoption  "+rhsOption+" for rhs(1) "+rhs(1).trim+" for def rhs regex "+defn.rhsRegex)
             defn.rhsRegex.pattern.matcher(rhs(1).trim).matches()
-            //defn.rhsRegex.pattern.matcher(context).matches()
           case _ => false
         }
     }
@@ -216,33 +215,21 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
       if (context.nonEmpty) {
         var matchedSomething = false
         try {
-          //println("in parse context "+context_line)
           for (watcher_regex <- watcher_statements; if !matchedSomething && watcher_regex.fullRegex.pattern.matcher(context).matches()) {
             matchedSomething = true
-            //println("in parse context "+context_line)
-            if (mutableWatcherFunction.contains(watcher_regex.name)) {
-              val coninst = watcher_regex.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-              mutableWatcherFunction(watcher_regex.name) = mutableWatcherFunction.get(watcher_regex.name).get :+ coninst
-              //println("in watcher match "+watcher_regex.name)
-            } else {
-              val coninst = watcher_regex.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
-              mutableWatcherFunction += watcher_regex.name -> Vector(coninst)
-              //println("in watcher match "+watcher_regex.name)
-            }
+            val coninst = watcher_regex.getObject(LoaderClassArguments(context, linenum, customer, manufacturer, product, schema))
+            addWCInstances(watcher_regex.name,coninst)
           }
           for(loader_assign <- loader_assignments; if !matchedSomething && assignMatch(loader_assign, context)){
             logger.info(emps, s"matched as assignment, key = $emps, line = $linenum, context = $context, context-class = ${loader_assign.getClass.getName}")
             matchedSomething = true
-            //println("in parse context "+context_line)
-            //println("in loader assign boolean "+loader_assign.isAssignment)
-            val coninst = loader_assign.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
+            val coninst = loader_assign.getObject(LoaderClassArguments(context, linenum, customer, manufacturer, product, schema))
             addLCInstances(emps,coninst)
           }
           for(loader_statm <- loader_statements; if !matchedSomething && loader_statm.fullRegex.pattern.matcher(context).matches()){
             logger.info(emps, s"matched as simple statement, key = $emps, line = $linenum, context = $context, context-class = ${loader_statm.getClass.getName}")
             matchedSomething = true
-            //println("in parse context "+context_line)
-            val coninst = loader_statm.getObject(ContextClassArguments(context, linenum, customer, manufacturer, product, schema))
+            val coninst = loader_statm.getObject(LoaderClassArguments(context, linenum, customer, manufacturer, product, schema))
             addLCInstances(emps,coninst)
           }
         }catch {
@@ -262,8 +249,8 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
     case buildContext(mps,mMpsContextLines) =>  parseContext(mMpsContextLines)
 
     case CreateBundleContext(loadid,mps) =>
-      val immwfmap = HashMap(mutableWatcherFunction.toSeq:_*)
-      val immlfmap = HashMap(mutableLoaderFunction.toSeq:_*)
+      val immwfmap = HashMap(watcherInstances.toSeq:_*)
+      val immlfmap = HashMap(loaderInstances.toSeq:_*)
       val child_props = BundleContext.props(loadid,mps,immwfmap,immlfmap)
       createChild(child_props._1,child_props._2)
 

@@ -1,9 +1,11 @@
 package com.glassbeam.context
 
 import java.io.File
+
 import com.glassbeam.context.ContextHelpers._
 import com.glassbeam.context.BfnameGrep.{BFnameGrepKey, BFnameGrepValue}
 import com.glassbeam.context.Bgrep.{BGrepKey, BGrepValue}
+import com.glassbeam.context.Context.{ContextReason, LoaderEvalArguments}
 //import com.glassbeam.context.Context.BundleCacheKey
 import com.google.common.cache.{Cache, CacheBuilder}
 import com.typesafe.config.ConfigFactory
@@ -58,7 +60,7 @@ with GeneratorDrivenPropertyChecks  with ParallelTestExecution {
         val contextFunction: String = sample.contextFunction
         val cr = ContextReason(HashMap[String, String](), "")
         val ccabg = getContextLine(contextFunction)
-        val cefa = ContextExecFnArguments(cr, file, loadId)
+        val cefa = LoaderEvalArguments(cr, file, loadId,"mps")
         val bkey = new BGrepKey(loadId, ccabg.linenum)
 
         And(s"content to match: $contentToWrite written to file ${file.getAbsolutePath}")
@@ -116,7 +118,7 @@ with GeneratorDrivenPropertyChecks  with ParallelTestExecution {
         val contextFunction: String = sample.contextFunction
         val cr = ContextReason(HashMap[String, String](), "")
         val ccabfng = getContextLine(contextFunction)
-        val cefa = ContextExecFnArguments(cr, file, loadId)
+        val cefa = LoaderEvalArguments(cr, file, loadId,"mps")
         val bkey = BundleCacheKey(loadId, ccabfng.linenum)
 
         And(s"file ${file.getAbsolutePath} created")

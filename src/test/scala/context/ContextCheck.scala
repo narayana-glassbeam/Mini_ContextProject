@@ -1,6 +1,8 @@
 package com.glassbeam.context
 
-import java.io.{ File, PrintWriter }
+import java.io.{File, PrintWriter}
+
+import com.glassbeam.context.Context.{ContextReason, LoaderClassArguments, LoaderEvalArguments}
 
 //import com.glassbeam.loader.Init
 import org.scalacheck.Gen
@@ -36,11 +38,11 @@ trait ContextTest {
   val genOperation = Gen.oneOf("==", ">=", "<=", ">", "<")
 
   val emptyCR = ContextReason(HashMap[String, String](), "")
-  val emptyCEFA = ContextExecFnArguments(emptyCR, null, -1)
+  val emptyCEFA = LoaderEvalArguments(emptyCR, null, -1,"mps")
 
-  def getContextLine(contextline: String) = ContextClassArguments(contextline, 1, "test_ec", "test_mfr", "test_prod", "test_sch")
+  def getContextLine(contextline: String) = LoaderClassArguments(contextline, 1, "test_ec", "test_mfr", "test_prod", "test_sch")
 
-  def getCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, null, -1)
+  def getCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, null, -1,"mps")
 
   val test_filename = "testfile.log"
   val test_path = "/tmp/" + test_filename
@@ -159,11 +161,11 @@ class LCMPSTest extends PropSpec with GeneratorDrivenPropertyChecks with Context
   property("test context l.customer and similar functions") {
     forAll(genStringNonEmpty) {
       (seed: String) =>
-        val ccac = ContextClassArguments("customer=l.customer", 1, "", "", "", "")
-        val ccap = ContextClassArguments("product=l.product", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccam = ContextClassArguments("manufacturer=l.manufacturer", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccas = ContextClassArguments("schema=l.schema", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccasnow = ContextClassArguments("now=s.now", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccac = LoaderClassArguments("customer=l.customer", 1, "", "", "", "")
+        val ccap = LoaderClassArguments("product=l.product", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccam = LoaderClassArguments("manufacturer=l.manufacturer", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccas = LoaderClassArguments("schema=l.schema", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccasnow = LoaderClassArguments("now=s.now", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
 
         val cr = ContextReason(HashMap[String, String]("ec" -> "test_ec"), "")
         val crc = new Lcustomer(ccac).execute(getCEFA(cr))
@@ -197,7 +199,7 @@ class FileSimpleTest extends PropSpec with GeneratorDrivenPropertyChecks with Co
         val flengline = getContextLine("fl=f.length")
 
         val cr = ContextReason(HashMap[String, String](), "")
-        def getFileCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, f, -1)
+        def getFileCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, f, -1,"mps")
         val crfd = new Fdate(fdateline).execute(getFileCEFA(cr))
         val crfn = new Fname(fnameline).execute(getFileCEFA(crfd))
         val crfp = new Fpath(fpathline).execute(getFileCEFA(crfn))
@@ -275,7 +277,7 @@ class FnamepathGrepTest extends PropSpec with GeneratorDrivenPropertyChecks with
     forAll(genStringNonEmpty) {
       (lhs: String) =>
         val f = writeToNewFile(lhs)
-        def getFileCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, f, -1)
+        def getFileCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, f, -1,"mps")
         val cr = ContextReason(HashMap[String, String](), "")
 
         val ccafn = getContextLine(s"filenm1=fname.grep /testfile.(.*)/")
@@ -309,7 +311,7 @@ class FgrepTest extends PropSpec with GeneratorDrivenPropertyChecks with Context
       (lhs: String) =>
         val rhs = "Thu Mar  3 13:56:06 PST 2011"
         val f = writeToNewFile(s"System Time:$rhs")
-        def getFileCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, f, -1)
+        def getFileCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, f, -1,"mps")
         val cr = ContextReason(HashMap[String, String](), "")
 
         val ccafg = getContextLine("""system_timeA=f.grep /System\s+Time\:(.*)/""")
@@ -337,7 +339,7 @@ class BnamepathGrepTest extends PropSpec with GeneratorDrivenPropertyChecks with
     forAll(genStringNonEmpty) {
       (lhs: String) =>
         val f = writeToNewFile(lhs)
-        def getFileCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, f, -1)
+        def getFileCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, f, -1,"mps")
         val cr = ContextReason(HashMap[String, String](), "")
 
         val ccafn = getContextLine(s"filenm1=fname.grep /testfile.(.*)/")
@@ -453,7 +455,7 @@ class EncodingTest extends PropSpec with GeneratorDrivenPropertyChecks with Cont
       (encoding: String) =>
         val rhs = encoding
         val f = s"$rhs.txt".toFile
-        def getFileCEFA(cr: ContextReason): ContextExecFnArguments = ContextExecFnArguments(cr, f, -1)
+        def getFileCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, f, -1,"mps")
         val cr = ContextReason(HashMap[String, String](), "")
 
         val ccafg = getContextLine(s"""t.encoding=('$encoding',/$rhs.txt/)""")

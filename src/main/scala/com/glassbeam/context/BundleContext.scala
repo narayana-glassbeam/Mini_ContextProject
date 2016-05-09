@@ -3,7 +3,7 @@ package com.glassbeam.context
 import java.io.File
 
 import akka.actor.{Actor, Props}
-import com.glassbeam.context.ContextCases._
+import com.glassbeam.context.Context._
 import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.Logger
 
@@ -25,7 +25,7 @@ class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContex
 
 
   def isFileMatched(fileName:String,ContextPatternName:String):Boolean = {
-    val wca = WatContextArguments(fileName,emps)
+    val wca = WatcherEvalArguments(fileName,emps)
     var filematched = false
     WatcherFunction.get(ContextPatternName) match {
       case Some(instances) =>
@@ -40,14 +40,14 @@ class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContex
 
   }
 
-  def eval_Context(mps:String,loadid:Long,filename:String):ContextReason = {
+  def evalContext(mps:String,loadid:Long,filename:String):ContextReason = {
     val file_eval:File = new File(filename)
     var cr = ContextReason(HashMap[String, String](), "")
     val contextInstances = LoaderFunction.get(mps).get
     //contextInstances.foreach(f => println("lc name "+f.arg.context))
     for(context_instance <- contextInstances;if cr.reason.isEmpty){
       try {
-        val cefa = ContextExecFnArguments(cr, file_eval, loadid)
+        val cefa = LoaderEvalArguments(cr, file_eval, loadid,mps)
         cr = context_instance.execute(cefa)
       }catch {
         case e:Exception =>
@@ -80,7 +80,7 @@ class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContex
     case ExtensibilityFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,ProcessFilePat.name)
 
     case UncompressBundleDepth(fileName,mps,loadid) =>
-      val wca = WatContextArguments(fileName,emps)
+      val wca = WatcherEvalArguments(fileName,emps)
       var depth:Int = 0
       WatcherFunction.get(UncompressLevel.name) match {
         case Some(insts) =>
@@ -90,7 +90,7 @@ class BundleContext(WatcherFunction:HashMap[String, Vector[AbstractWatcherContex
       }
       sender ! depth
 
-    case file_eval(filename,mps,loadid) => sender ! eval_Context(mps,loadid,filename)
+    case EvalFileContext(filename,mps,loadid) => sender ! evalContext(mps,loadid,filename)
 
   }
 }

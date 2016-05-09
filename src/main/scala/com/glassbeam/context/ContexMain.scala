@@ -2,7 +2,7 @@ package com.glassbeam.context
 import akka.Done
 import akka.pattern.ask
 import akka.util.Timeout
-import com.glassbeam.context.ContextCases._
+import com.glassbeam.context.Context._
 import com.glassbeam.model.{Logger, Opsdb}
 
 import scala.concurrent.duration._
