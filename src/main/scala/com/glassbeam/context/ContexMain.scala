@@ -32,7 +32,7 @@ object ContextMain extends Logger {
     val result3 = Await.result(bundle_depth, 5 minutes)
     println(" bundle depth result is "+bundle_depth)
 
-    val context_result:Future[ContextReason] = (contextSupervisor ? file_eval(file_name,mps,loadid)).mapTo[ContextReason]
+    val context_result:Future[ContextReason] = (contextSupervisor ? EvalFileContext(file_name,mps,loadid)).mapTo[ContextReason]
 
     context_result.onComplete{
       case Success(cr) =>

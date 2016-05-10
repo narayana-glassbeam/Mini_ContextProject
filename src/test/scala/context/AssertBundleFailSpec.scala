@@ -2,7 +2,7 @@ package com.glassbeam.context
 
 import java.io.File
 
-import com.glassbeam.context.Context.{ContextReason, LoaderClassArguments, LoaderEvalArguments}
+import com.glassbeam.context.Context.{ContextReason, ContextClassArguments, LoaderEvalArguments}
 import com.glassbeam.model.ContextFailure
 import org.scalatest.{FeatureSpec, Matchers}
 
@@ -11,7 +11,7 @@ import scala.collection.immutable.HashMap
 class AssertBundleFailSpec extends FeatureSpec with Matchers {
 
   val ctxString = "b.assertBundleFail(sysid,message,123)"
-  val cca = LoaderClassArguments(ctxString, 1, "", "", "", "")
+  val cca = ContextClassArguments(ctxString, 1, "", "", "", "")
   val cr = ContextReason(HashMap[String, String](), "")
   val cefa = LoaderEvalArguments(cr, new File(""), 1234,"mps")
   val assertBundleFail = AssertBundleFail.getObject(cca)
@@ -41,7 +41,7 @@ class AssertBundleFailSpec extends FeatureSpec with Matchers {
 
     scenario("should just record the errors and not send mail when no template id is given"){
       val ctxString = "b.assertBundleFail(sysid,message)"
-      val cca = LoaderClassArguments(ctxString, 1, "", "", "", "")
+      val cca = ContextClassArguments(ctxString, 1, "", "", "", "")
       val cefa = LoaderEvalArguments(cr, new File(""), 1234,"mps")
       val assertBundle = assertBundleFail.execute(cefa)
       assertBundle.failure shouldBe Some(ContextFailure.AssertBundleFailure)
@@ -50,7 +50,7 @@ class AssertBundleFailSpec extends FeatureSpec with Matchers {
 
     scenario("should just record the errors and not send mail when both message template and message String is given") {
       val ctxString = "b.assertBundleFail(sysid)"
-      val cca = LoaderClassArguments(ctxString, 1, "", "", "", "")
+      val cca = ContextClassArguments(ctxString, 1, "", "", "", "")
       val cefa = LoaderEvalArguments(cr, new File(""), 1234,"mps")
       val assertBundle = assertBundleFail.execute(cefa)
       assertBundle.failure shouldBe Some(ContextFailure.AssertBundleFailure)

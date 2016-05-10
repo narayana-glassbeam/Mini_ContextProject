@@ -1,7 +1,7 @@
 package com.glassbeam.context
 
 
-import com.glassbeam.context.Context.{ContextReason, LoaderClassArguments, LoaderEvalArguments}
+import com.glassbeam.context.Context.{ContextClassArguments, ContextReason, LoaderEvalArguments, MatchArguments}
 import com.glassbeam.context.ContextHelpers._
 import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.StartupConfig._
@@ -10,13 +10,25 @@ import org.json4s.NoTypeHints
 
 import scala.util.matching.Regex
 
+object LoaderStatements extends Enumeration {
+
+  val loaderStatments = Value
+
+  def getName = loaderStatments.toString
+
+  private val loader_statements: Array[LoaderContextStatement] = Array(AssertUncompressionFail, Assert, AssertTruthy, Validate,
+    CombineLines, BProperties, BId, AssertBundleDuplicate, AssertBundleFail,Encoding,AssertPxFileCount)
+
+  def unapply(ma:MatchArguments): Option[LoaderContextStatement] = loader_statements.find(ls => ls.fullRegex.pattern.matcher(ma.conline).matches() && ls.contextSection == ma.cSection )
+}
+
 object AssertUncompressionFail extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^b.assertOnUncompressionFailure\s*(\(\s*(\d+)\s*\)|)(\(\s*(\d+)\s*,\s*(.*)\s*\)|)(\(\s*(.*)\s*\)|)?\s*$""".r
 
-  def getObject(carg: LoaderClassArguments) = new AssertUncompressionFail(carg)
+  def getObject(carg: ContextClassArguments) = new AssertUncompressionFail(carg)
 }
 
-class AssertUncompressionFail(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, AssertUncompressionFail)  {
+class AssertUncompressionFail(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertUncompressionFail)  {
 
   import AssertUncompressionFail._
 
@@ -77,10 +89,10 @@ class AssertUncompressionFail(carg: LoaderClassArguments) extends AbstractLoader
 
 object Assert extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^f.assert\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
-  def getObject(carg: LoaderClassArguments) = new Assert(carg)
+  def getObject(carg: ContextClassArguments) = new Assert(carg)
 }
 
-class Assert(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, Assert)  {
+class Assert(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Assert)  {
 
   import Assert._
 
@@ -113,10 +125,10 @@ class Assert(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, Ass
 object AssertPxFileCount extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^b.assertPxFileCount\s*\((\s*\d+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
   val pxCountObtainer = (loadId: Long) => LoadIdDao.getPxCountByLoadId(loadId)
-  def getObject(carg: LoaderClassArguments) = new AssertPxFileCount(carg, pxCountObtainer)
+  def getObject(carg: ContextClassArguments) = new AssertPxFileCount(carg, pxCountObtainer)
 }
 
-class AssertPxFileCount(carg: LoaderClassArguments, getPxCount: Long => Option[Long]) extends AbstractLoaderContext(carg, AssertPxFileCount) with MLoaderState  {
+class AssertPxFileCount(carg: ContextClassArguments, getPxCount: Long => Option[Long]) extends AbstractLoaderContext(carg, AssertPxFileCount) with MLoaderState  {
 
   import AssertPxFileCount._
 
@@ -168,10 +180,10 @@ object Validate extends LoaderContextStatement with MLoaderState {
   private[this] val valueObtainerForKey: (String, String) => Seq[String] = ValidateTableDao.getValuesForKey _
 
 
-  def getObject(carg: LoaderClassArguments) = new Validate(carg, valueObtainerForKey)
+  def getObject(carg: ContextClassArguments) = new Validate(carg, valueObtainerForKey)
 }
 
-class Validate(carg: LoaderClassArguments, valueObtainerForKey: (String, String) => Seq[String]) extends AbstractLoaderContext(carg, Validate)  {
+class Validate(carg: ContextClassArguments, valueObtainerForKey: (String, String) => Seq[String]) extends AbstractLoaderContext(carg, Validate)  {
 
   import Validate._
 
@@ -198,10 +210,10 @@ class Validate(carg: LoaderClassArguments, valueObtainerForKey: (String, String)
 object CombineLines extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^combinelines\s*\((.+?)\s*,\s*(.+?)\s*,\s*(.+?)\s*,\s*(.*?)\s*\)\s*$""".r
   val combinelines = "combinelines"
-  def getObject(carg: LoaderClassArguments) = new CombineLines(carg)
+  def getObject(carg: ContextClassArguments) = new CombineLines(carg)
 }
 
-class CombineLines(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, CombineLines)  {
+class CombineLines(carg: ContextClassArguments) extends AbstractLoaderContext(carg, CombineLines)  {
 
   import CombineLines._
 
@@ -220,10 +232,10 @@ object Encoding extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^t.encoding\s*=\s*(.*$)\s*$""".r
   val fr_encode_tuple_r = """'(.+?)'\s*,\s*/(.+?)/""".r
   val textencoding = "t.encoding"
-  def getObject(carg: LoaderClassArguments) = new Encoding(carg)
+  def getObject(carg: ContextClassArguments) = new Encoding(carg)
 }
 
-class Encoding(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, Encoding)  {
+class Encoding(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Encoding)  {
 
   import Encoding._
 
@@ -262,10 +274,10 @@ class Encoding(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, E
  */
 object AssertTruthy extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^f.assertTruthy\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
-  def getObject(carg: LoaderClassArguments) = new AssertTruthy(carg)
+  def getObject(carg: ContextClassArguments) = new AssertTruthy(carg)
 }
 
-class AssertTruthy(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, AssertTruthy)  {
+class AssertTruthy(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertTruthy)  {
 
   import AssertTruthy._
 
@@ -308,7 +320,7 @@ class AssertTruthy(carg: LoaderClassArguments) extends AbstractLoaderContext(car
 object BProperties extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^b.properties\s*\((.+?)\)\s*$""".r
 
-  def getObject(carg: LoaderClassArguments) = new BProperties(carg)
+  def getObject(carg: ContextClassArguments) = new BProperties(carg)
 }
 
 object BPropertiesIdHelper extends Logger {
@@ -356,7 +368,7 @@ object BPropertiesIdHelper extends Logger {
 
 }
 
-class BProperties(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, BProperties)  {
+class BProperties(carg: ContextClassArguments) extends AbstractLoaderContext(carg, BProperties)  {
 
   private val emps = carg.customer + filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
 
@@ -369,10 +381,10 @@ class BProperties(carg: LoaderClassArguments) extends AbstractLoaderContext(carg
 object BId extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^b.id\s*\((.+?)\)\s*$""".r
 
-  def getObject(carg: LoaderClassArguments) = new BId(carg)
+  def getObject(carg: ContextClassArguments) = new BId(carg)
 }
 
-class BId(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, BId)  {
+class BId(carg: ContextClassArguments) extends AbstractLoaderContext(carg, BId)  {
 
   private val emps = carg.customer + filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
 
@@ -384,7 +396,7 @@ class BId(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, BId)  
 
 object AssertBundleDuplicate extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^b.assertBundleDuplicate\s*(\(\s*(\d+)\s*\)|)(\(\s*(\d+)\s*,\s*(.*)\s*\)|)(\(\s*(.*)\s*\)|)?\s*$""".r
-  def getObject(carg: LoaderClassArguments) = new AssertBundleDuplicate(carg)
+  def getObject(carg: ContextClassArguments) = new AssertBundleDuplicate(carg)
   val BundleDuplicate = "assertBundleDuplicate"
   val exists = "Exists"
   val template = "assertBundleDuplicateOptionalTemplate"
@@ -392,7 +404,7 @@ object AssertBundleDuplicate extends LoaderContextStatement with MLoaderState {
 }
 
 
-class AssertBundleDuplicate(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, AssertBundleDuplicate)  {
+class AssertBundleDuplicate(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertBundleDuplicate)  {
   import AssertBundleDuplicate._
   def assertBundleDuplicate(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     val optTemplate = if (assertOptionalTemplateId.isDefined) assertOptionalTemplateId.get else ""
@@ -411,10 +423,10 @@ class AssertBundleDuplicate(carg: LoaderClassArguments) extends AbstractLoaderCo
 object AssertBundleFail extends LoaderContextStatement with MLoaderState {
   override val fullRegex: Regex = """^b.assertBundleFail\s*\((.+?),(.+?),(\d+)\)\s*$""".r
 
-  override def getObject(carg: LoaderClassArguments) = new AssertBundleFail(carg)
+  override def getObject(carg: ContextClassArguments) = new AssertBundleFail(carg)
 }
 
-class AssertBundleFail(carg: LoaderClassArguments) extends AbstractLoaderContext(carg, AssertBundleFail)  {
+class AssertBundleFail(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertBundleFail)  {
   private val logger = Logging(this)
 
   private def evalArgs(texts: Option[List[String]], cefa: LoaderEvalArguments) = {

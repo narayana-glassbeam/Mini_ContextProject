@@ -1,6 +1,7 @@
 package com.glassbeam.context
 
-import com.glassbeam.context.Context.{ContextReason, LCPClassArguments, LCPEvalArguments}
+import com.glassbeam.context.Context.{ContextClassArguments, ContextReason, LCPEvalArguments, MatchArguments}
+import com.glassbeam.context.ContextSection.ContextSection
 import com.glassbeam.context.{ContextSection => _, ContextStage => _}
 import com.glassbeam.model.Logger
 
@@ -8,30 +9,30 @@ import scala.util.matching.Regex
 
 abstract class LcpContext(val rhsRegex: Regex) extends LCPContextAssignment
 
-object LCPType extends Enumeration {
-  type LCPType = Value
-  val Solr, Cassandra, S3, Loader = Value
-  def getSubtype(typ: LCPType): LCPSubtype = typ match {
-    case Solr      => SolrSubtype
-    case Cassandra => CassandraSubtype
-    case S3        => S3Subtype
-    case Loader    => LoaderSubtype
+object LcpStatements {
+
+  val (solr, cassandra, s3, loader) = ("Solr","Cass","S3","Loader")
+
+  def unapply(ma:MatchArguments): Option[(LcpContext,String)] =  ma.conline.split('.') match {
+    case Array(solr,_)           => SolrContextLines.unapply(ma) map ((_,solr))
+    case Array(cassandra,_)      => CassandraContextLines.unapply(ma) map ((_,cassandra))
+    case Array(s3,_)             => S3ContextLines.unapply(ma) map ((_,s3))
+    case Array(loader,_)         => LoaderContextLines.unapply(ma) map ((_,loader))
+    case _ => None
   }
 }
 
-abstract class LCPSubtype extends Enumeration with Logger {
+abstract class LcpSubtype extends Enumeration with Logger {
   val logger = Logging(this)
   def getDefinition(clid:Value): LcpContext
 }
 
-object SolrSubtype extends LCPSubtype {
+object SolrContextLines extends LcpSubtype {
   type SolrSubtype = Value
 
   val SolrHome, SolrZkHost, SolrHost, SolrNumShards, SolrReplicationFactor, SolrZkHostLogVault, SolrOnlyLogVault,
   SolrBucketHost, SolrBucketColPlacementInfo, SolrBucketColSize, SolrBucketShardReplicaInfo, SolrDynamicSchema, SolrMaxContentLines,
   SolrStoreIndex, SolrRejectNumPastDays, SolrRejectNumFutureDays, SolrNumShardsLV, SolrReplicationFactorLV = Value
-
-  //println("solr home in string "+SolrHome.toString)
 
   def getDefinition(solrline: Value): LcpContext = solrline match {
     case SolrHome                   => new LcpContext("""Solr.DataDir='(.+?)'""".r) with ILcpState
@@ -52,11 +53,12 @@ object SolrSubtype extends LCPSubtype {
     case SolrRejectNumFutureDays    => new LcpContext("""Solr.RejectNumFutureDays='(.+?)'""".r) with MLcpState
     case SolrNumShardsLV            => new LcpContext("""Solr.NumShardsLV='(.+?)'""".r) with ILcpState
     case SolrReplicationFactorLV    => new LcpContext("""Solr.ReplicationFactorLV='(.+?)'""".r) with ILcpState
-    case x => logger.error(s"unknown Solr subtype = $solrline value of $x"); null
   }
+
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ solrline => solrline.rhsRegex.pattern.matcher(ma.conline).matches() && solrline.contextSection == ma.cSection }
 }
 
-object CassandraSubtype extends LCPSubtype {
+object CassandraContextLines extends LcpSubtype {
   type CassandraSubtype = Value
 
   val CassKeyspace, CassTimeslice, CassPreparedInserts, CassAsync, CassEventBatchCount, CassFetchSize, CassConsistencyLevel, CassHost = Value
@@ -70,11 +72,12 @@ object CassandraSubtype extends LCPSubtype {
     case CassFetchSize        =>  new LcpContext("""Cass.FetchSize=(.+?)""".r) with ILcpState
     case CassConsistencyLevel =>  new LcpContext("""Cass.ConsistencyLevel=(.+?)""".r) with ILcpState
     case CassHost             =>  new LcpContext("""Cass.Host='(.+?)'""".r) with ILcpState
-    case x => logger.error(s"unknown Cassandra subtype = $subtyp value of $x"); null
   }
+
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ cassline => cassline.rhsRegex.pattern.matcher(ma.conline).matches() && cassline.contextSection == ma.cSection }
 }
 //
-object S3Subtype extends LCPSubtype {
+object S3ContextLines extends LcpSubtype {
   type S3Subtype = Value
 
   val S3AccessKey, S3SecurityKey, S3Bucket = Value
@@ -83,11 +86,14 @@ object S3Subtype extends LCPSubtype {
     case S3AccessKey   =>  new LcpContext( """S3.AccessKey=(.+?)""".r) with ILcpState
     case S3SecurityKey =>  new LcpContext("""S3.SecurityKey=(.+?)""".r) with ILcpState
     case S3Bucket      =>  new LcpContext("""S3.Bucket=(.+?)""".r) with ILcpState
-    case x => logger.error(s"unknown S3 subtype = $subtyp value of $x"); null
   }
+
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ s3line => s3line.rhsRegex.pattern.matcher(ma.conline).matches() && s3line.contextSection == ma.cSection }
 }
+
+
 //
-object LoaderSubtype extends LCPSubtype {
+object LoaderContextLines extends LcpSubtype {
   type LcpSubtype = Value
   val UploadedBy, ObsTs, Sysid, RxDate, RxSource, BundleType, NumberOfParsers, LoadIdPriority = Value
   def getDefinition(subtyp: Value): LcpContext = subtyp match {
@@ -99,15 +105,16 @@ object LoaderSubtype extends LCPSubtype {
     case BundleType      =>  new LcpContext("""Loader.Bundle_type=(.+?)""".r) with ILcpState
     case NumberOfParsers =>  new LcpContext("""Loader.NoOfParsers=(.+?)""".r) with ILcpState
     case LoadIdPriority  =>  new LcpContext("""Loader.LoadIdPriority=(.+?)""".r) with ILcpState
-    case x => logger.error(s"unknown LCP subtype = $subtyp value of $x"); null
   }
+
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ loaderline => loaderline.rhsRegex.pattern.matcher(ma.conline).matches() && loaderline.contextSection == ma.cSection }
 }
 
-object LCPInstance  {
-  def getLcpContextObject(carg:LCPClassArguments,frozenObject:LCPContextAssignment) = new LCPContext(carg,frozenObject)
+object LcpObject  {
+  def getObject(carg:ContextClassArguments,frozenObject:LCPContextAssignment) = new LCPContextInstance(carg,frozenObject)
 }
 
-class LCPContext(carg:LCPClassArguments,contextObject:LCPContextAssignment) extends AbstractLCPContext(carg,contextObject) {
+class LCPContextInstance(carg:ContextClassArguments,contextObject:LCPContextAssignment) extends AbstractLCPContext(carg,contextObject) {
 
   def literal(lhs: String, texts: List[String], cefa: LCPEvalArguments): ContextReason = {
     val value = texts.head.trim

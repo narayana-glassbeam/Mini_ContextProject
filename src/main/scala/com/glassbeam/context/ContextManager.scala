@@ -23,17 +23,19 @@ object ContextSupervisor {
 
   def props = Props[ContextSupervisor]
 
-  def asLines(config:String) = config.split("\r\n").map(_.trim)
+
 
 }
 
 trait H2ContextProvider {
 
+  def asLines(config:String) = config.split("\r\n").map(_.trim)
+
   def getAllKeys() = ContextTableDao.getAllKeys()
 
   def getContext(key:String) = ContextTableDao.getContextForKey(key)
 
-  def getConfig(key:String) = LoaderDao.getValueForKey(key)
+  def getConfig(key:String) = asLines(LoaderDao.getValueForKey(key).mkString)
 }
 
 trait CSCreationSupport extends  Logger {
@@ -66,11 +68,17 @@ class ContextSupervisor extends Actor with CSCreationSupport with H2ContextProvi
 
   val keytots: concurrent.Map[String, Timestamp] = new ConcurrentHashMap[String, Timestamp].asScala
 
-  lazy val cassConfig = asLines(getConfig(Cassandra).mkString)
+//  lazy val cassConfig = asLines(getConfig(Cassandra).mkString)
+//
+//  lazy val solrConfig = asLines(getConfig(Solr).mkString)
+//
+//  lazy val s3Config = asLines(getConfig(S3).mkString)
 
-  lazy val solrConfig = asLines(getConfig(Solr).mkString)
+  lazy val cassConfig = getConfig(Cassandra)
 
-  lazy val s3Config = asLines(getConfig(S3).mkString)
+  lazy val solrConfig = getConfig(Solr)
+
+  lazy val s3Config = getConfig(S3)
 
   lazy val (mCommonCont,immCommonCont) = getContext("Common") match {
     case Some(commonContext) =>

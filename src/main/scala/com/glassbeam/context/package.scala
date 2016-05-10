@@ -63,13 +63,14 @@ object Context {
 
   case class ContextReason(val contextStrings: HashMap[String, String], val reason: String, val failure: Option[ContextFailure] = None,
                            val bproperties: Option[Map[String, String]] = None)
-  case class LoaderClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String) extends ClassArguments
+  case class ContextClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String) extends ClassArguments
   case class LoaderEvalArguments(cr: ContextReason, file: File, loadId: Long,mps:String) extends EvalArguments
 
-  case class LCPClassArguments(context:String,customer: String, manufacturer: String, product: String, schema: String) extends ClassArguments
   case class LCPEvalArguments(cr: ContextReason,mps:String) extends EvalArguments
 
   case class WatcherEvalArguments(file_name:String,mps:String) extends EvalArguments
+
+  case class MatchArguments(conline:String,cSection:ContextSection) extends Context
 
 }
 

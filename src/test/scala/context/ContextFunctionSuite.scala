@@ -3,7 +3,7 @@ package com.glassbeam.context
 import java.io.File
 import java.nio.file.Path
 
-import com.glassbeam.context.Context.{ContextReason, LoaderClassArguments, LoaderEvalArguments}
+import com.glassbeam.context.Context.{ContextReason, ContextClassArguments, LoaderEvalArguments}
 import com.glassbeam.context.ContextAssertData._
 import com.glassbeam.context.Dummy._
 //import com.glassbeam.extensibility.traits.Parsable
@@ -30,14 +30,14 @@ object ContextAssertData {
   lazy val invalidContextRows: List[String] = List("""sysid""", """=""")
   lazy val dummyCR = ContextReason(HashMap[String, String]("sysid" -> "glassbeam", "mfr" -> "dummyMfr"), "")
   lazy val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
-  lazy val cca = LoaderClassArguments("assert(sysid)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  lazy val cca = ContextClassArguments("assert(sysid)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 }
 
 class AssertSpec extends FlatSpec with Matchers with dummyRefs {
   val dummyCR = ContextReason(HashMap[String, String]("sysid" -> "glassbeam", "mfr" -> "dummyMfr", "node" -> "Sol42"), "")
   val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps") // ctx, file, loadid
 
-  def getcca(context: String) = LoaderClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  def getcca(context: String) = ContextClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 
   "Assert with one input parameter (context variable)" should "have empty Reason value for defined sysid 'f.assert(sysid)'" in {
     val ctxLine = "f.assert(sysid)"
@@ -166,7 +166,7 @@ class AssertFileDuplicateSpec extends FlatSpec with Matchers with dummyRefs with
     val cnt = mockFunction[String, Long, String, Int]
     cnt expects(fname, *, *) returning 0 once
 
-    val cca = LoaderClassArguments(ctxfn, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(ctxfn, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String](fname -> fname, "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, new File(fname), -1,"mps")
     val clsAssert = new AssertFileDuplicate(cca) {
@@ -180,7 +180,7 @@ class AssertFileDuplicateSpec extends FlatSpec with Matchers with dummyRefs with
     val cnt = mockFunction[String, Long, String, Int]
     cnt expects(*, *, *) returning 2 once
 
-    val cca = LoaderClassArguments(ctxfn, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(ctxfn, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String](fname -> fname, "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, new File(fname), -1,"mps")
     val clsAssert = new AssertFileDuplicate(cca) {
@@ -198,7 +198,7 @@ class AssertUncompressionFailSpec extends FlatSpec with Matchers with dummyRefs 
   val ctxFn = "b.assertOnUncompressionFailure"
   val onFail = mockFunction[Long, String, Unit]
 
-  def getcca(context: String) = LoaderClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  def getcca(context: String) = ContextClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 
   def getauf(ctxLine: String, compressedFiles: Seq[(String, Option[Int])]) = {
     new AssertUncompressionFail(getcca(ctxLine)) {
@@ -322,7 +322,7 @@ class AssertTruthySpec extends FlatSpec with Matchers with dummyRefs {
     "zombie" -> "true", "human" -> "false", "emptyStr" -> "", "spaces" -> "   ", "BIG_TRUE" -> "TRUE", "BIG_FALSE" -> "FALSE"), "")
   val cefa =LoaderEvalArguments(dummyCR, null, 1L,"mps") // ctx, file, loadid
 
-  def getcca(context: String) = LoaderClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  def getcca(context: String) = ContextClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 
   "AssertTruthy with one input parameter (context variable)" should "fail for empty variable 'f.assertTruthy(emptyStr)'" in {
     val ctxLine = "f.assertTruthy(emptyStr)"
@@ -487,7 +487,7 @@ class AssertTruthySpec extends FlatSpec with Matchers with dummyRefs {
 
 class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
   "Testing x=l.schema' " should "Be Passed" in {
-    val cca = LoaderClassArguments("x=l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
@@ -496,7 +496,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     assert(x.reason.isEmpty)
   }
   "Testing l.schema Without RHS" should "Be Failed" in {
-    val cca = LoaderClassArguments("x=", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
@@ -505,7 +505,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing l.schema without LHS' " should "Be Failed" in {
-    val cca = LoaderClassArguments("l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
@@ -514,7 +514,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing l.schema with  RHS=schema' " should "Be Failed" in {
-    val cca = LoaderClassArguments("x=abc", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=abc", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
@@ -526,7 +526,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
 
 class FDateSpec extends FlatSpec with Matchers with dummyRefs {
   "Testing x=f.date' with a sample input file" should "Be Passed " in {
-    val cca = LoaderClassArguments("x=f.date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=f.date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, new java.io.File("/tmp/test.txt"), -1,"mps")
     val clsFDate = new Fdate(cca)
@@ -535,7 +535,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     assert(x.reason.isEmpty)
   }
   "Testing x=f.date With NULL" should "Be Failed " in {
-    val cca = LoaderClassArguments("x=", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
@@ -544,7 +544,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing f.date without using f.date " should "Be Failed " in {
-    val cca = LoaderClassArguments("x=F.Date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=F.Date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
@@ -553,7 +553,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=f.date on NULL" should "Be Failed " in {
-    val cca = LoaderClassArguments("x=f.date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=f.date", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
@@ -566,7 +566,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
 class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
 
   "Testing x=l.customer' with rhs as null" should "Be Passed " in {
-    val cca = LoaderClassArguments("ec=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("ec=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Lcustomer(cca)
@@ -576,14 +576,14 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.customer functionality by comparision" should "Be Passed " in {
-    val cca = LoaderClassArguments("ec=l.customer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("ec=l.customer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLCust = new Lcustomer(cca)
     assert(clsLCust.arg.customer == cca.customer)
   }
   "Testing l.customer without lhs" should "Be failed" in {
-    val cca = LoaderClassArguments("l.customer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("l.customer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLCust = new Lcustomer(cca)
@@ -591,7 +591,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty())
   }
   "Testing x=l.product' with rhs as null" should "Be Passed " in {
-    val cca = LoaderClassArguments("prod=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("prod=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLProd = new Lproduct(cca)
@@ -601,14 +601,14 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.product functionality by comparision" should "Be Passed " in {
-    val cca = LoaderClassArguments("ec=l.product", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("ec=l.product", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLCust = new Lcustomer(cca)
     assert(clsLCust.arg.product == cca.product)
   }
   "Testing x=l.manufacturer' with rhs as null" should "Be Passed " in {
-    val cca = LoaderClassArguments("prod=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("prod=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLMfr = new Lmanufacturer(cca)
@@ -618,14 +618,14 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.manufacturer functionality by comparision" should "Be Passed " in {
-    val cca = LoaderClassArguments("x=l.manufacturer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=l.manufacturer", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLCust = new Lmanufacturer(cca)
     assert(clsLCust.arg.manufacturer == cca.manufacturer)
   }
   "Testing x=l.schema' with rhs as null" should "Be Passed " in {
-    val cca = LoaderClassArguments("x=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLSch = new Lschema(cca)
@@ -635,7 +635,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.schema functionality by comparision" should "Be Passed " in {
-    val cca = LoaderClassArguments("x=l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=l.schema", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLCust = new Lschema(cca)
@@ -644,7 +644,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
   //File Level Functions
 
   "Testing x=f.name' with rhs as null" should "Be Passed " in {
-    val cca = LoaderClassArguments("x=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=null", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, new java.io.File("/tmp/test.txt"), -1,"mps")
     val clsFname = new Fname(cca)
@@ -652,7 +652,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     assert(!x.reason.isEmpty)
   }
   "Testing x=f.name' Functionality " should "Be Passed " in {
-    val cca = LoaderClassArguments("x=f.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x=f.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val dummyCR = ContextReason(HashMap[String, String]("sch" -> "TEST", "mfr" -> "dummyMfr"), "")
     val cefa = LoaderEvalArguments(dummyCR, new java.io.File("/tmp/test.txt"), -1,"mps")
     val clsFname = new Fname(cca)
@@ -664,7 +664,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
 
 class ValidateTestSpec extends FlatSpec with Matchers with dummyRefs with RunEnvironment {
   //  ConfigSetup.init
-  val cca = LoaderClassArguments("validate(mfr)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  val cca = ContextClassArguments("validate(mfr)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
   val emps = cca.customer + filesep + cca.manufacturer + filesep + cca.product + filesep + cca.schema
 
   def valueObtainerForKey(mfrKey: String, mfrValueToReturn: String): (String, String) => Seq[String] = (key, _emps) => {
@@ -691,7 +691,7 @@ class ValidateTestSpec extends FlatSpec with Matchers with dummyRefs with RunEnv
 
 class BSizeTestSpec extends FlatSpec with Matchers with dummyRefs {
   "BSize" should "succeed" in {
-    val cca = LoaderClassArguments("s=b.size", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("s=b.size", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cefa = LoaderEvalArguments(dummyCR, new File("/tmp/testFile"), -1,"mps")
     val bundleSizeObtainer: File => Long = file =>
       if (file.toString == "/tmp/testFile") 10L else 0L
@@ -707,7 +707,7 @@ class BIdTestSpec extends FlatSpec with Matchers with dummyRefs {
   "BId" should "succeed" in {
     val sysIdValue = "glassbeam"
     val obs_tsValue = "testObsts"
-    val cca = LoaderClassArguments("b.id(sysid,obs_ts) ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("b.id(sysid,obs_ts) ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String]("sysid" -> sysIdValue, "obs_ts" -> obs_tsValue), "")
     val cefa = LoaderEvalArguments(cr, null, -1,"mps")
     val responseContextReason = BId.getObject(cca).execute(cefa)
@@ -721,7 +721,7 @@ class BIdTestSpec extends FlatSpec with Matchers with dummyRefs {
 class FcountTestSpec extends FlatSpec with Matchers with MockFactory with dummyRefs {
   "Fcount" should "succeed" in {
 
-    val cca = LoaderClassArguments("c=f.count /.*test.*/ ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("c=f.count /.*test.*/ ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String](), "")
     val cefa = LoaderEvalArguments(cr, null, 10L,"mps")
     val fileNamesObtainer = mockFunction[Long, Seq[String]]
@@ -734,7 +734,7 @@ class FcountTestSpec extends FlatSpec with Matchers with MockFactory with dummyR
   }
 
   it should "also succeed" in {
-    val cca = LoaderClassArguments("c=f.count /.*test1.*/ ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("c=f.count /.*test1.*/ ", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String](), "")
     val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
     val fileNamesObtainer = mockFunction[Long, Seq[String]]
@@ -749,7 +749,7 @@ class FcountTestSpec extends FlatSpec with Matchers with MockFactory with dummyR
 
 class BnameTestSpec extends FlatSpec with Matchers with MockFactory with dummyRefs {
   "Bname" should "succeed" in {
-    val cca = LoaderClassArguments("bname=b.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("bname=b.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String](), "")
     val cefa = LoaderEvalArguments(cr, new File("/tmp/test.txt"), -1,"mps")
     val bundleNameObtainer = mockFunction[File, String]
@@ -762,7 +762,7 @@ class BnameTestSpec extends FlatSpec with Matchers with MockFactory with dummyRe
   }
 
   it should "throw exception" in {
-    val cca = LoaderClassArguments("bname=b.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("bname=b.name", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String](), "")
     val cefa = LoaderEvalArguments(cr, new File("/tmp/test.txt"), -1,"mps")
     val bundleNameObtainer = mockFunction[File, String]
@@ -778,10 +778,10 @@ class BnameTestSpec extends FlatSpec with Matchers with MockFactory with dummyRe
 }
 
 class LookupTestSpec extends FlatSpec with Matchers with MockFactory with dummyRefs with RunEnvironment {
-  private def getDelimitedMPS(carg: LoaderClassArguments) = filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
+  private def getDelimitedMPS(carg: ContextClassArguments) = filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
 
   "Bname" should "provide proper value to lValue of context function" in {
-    val cca = LoaderClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val delimMPS = getDelimitedMPS(cca)
     val cr = ContextReason(contextStrings = HashMap[String, String]("ec" -> "testEC", "test" -> "testKey"), "")
     val cefa = LoaderEvalArguments(cr, new File("/tmp/test.txt"), -1,"mps")
@@ -796,7 +796,7 @@ class LookupTestSpec extends FlatSpec with Matchers with MockFactory with dummyR
 
 
   it should "provide empty value to lValue of context function" in {
-    val cca = LoaderClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val delimMPS = getDelimitedMPS(cca)
     val cr = ContextReason(contextStrings = HashMap[String, String]("ec" -> "testEC", "test" -> "testKey"), "")
     val cefa = LoaderEvalArguments(cr, new File("/tmp/test.txt"), -1,"mps")
@@ -810,7 +810,7 @@ class LookupTestSpec extends FlatSpec with Matchers with MockFactory with dummyR
   }
 
   it should "fail" in {
-    val cca = LoaderClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("lValue=lookup(test)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String]("test" -> "testKey"), "")
     val cefa = LoaderEvalArguments(cr, new File("/tmp/test.txt"), -1,"mps")
     val lookupValueObtainer = mockFunction[String, String, Option[String]]
@@ -826,7 +826,7 @@ class MGrepTestSpec extends FlatSpec with Matchers with dummyRefs {
   import com.glassbeam.context.TestHelpers._
 
   "MGrep" should "provide values this_testX_Value for x" in {
-    val cca = LoaderClassArguments("x = m.grep /start:/ /this(.+?)value/", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("x = m.grep /start:/ /this(.+?)value/", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val file = new File("/tmp/test.txt")
     file.write(
       """test content
@@ -879,7 +879,7 @@ class XMLValueTestSpec extends FlatSpec with Matchers with dummyRefs {
 
 
   "XMLValue" should "succeed" in {
-    val cca = LoaderClassArguments(
+    val cca = ContextClassArguments(
       """tzfirsttemp=xmlValue(/.*MRPD.*\.xml/,//com.ibm.inventory/ResourceSet/Resource/Property[@displayName="Displayable Message"]/Value/)""",
       1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val file = new File("/tmp/210796175BWW40.NOCUST.000.NOPMH.131119011534.cl9.MRPD.2107.xml")
@@ -894,7 +894,7 @@ class XMLValueTestSpec extends FlatSpec with Matchers with dummyRefs {
 
   }
   it should "fail" in {
-    val cca = LoaderClassArguments(
+    val cca = ContextClassArguments(
       """tzfirsttemp=xmlValue(/.*MRPD.*\.xml/,//invalidXpath/#$/)""",
       1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val file = new File("/tmp/nonextingfile.MRPD.2107.xml")
@@ -923,7 +923,7 @@ class ProcessBundleToContextTestSpec extends FlatSpec with Matchers with dummyRe
 
   val file = new File("/tmp/processBndlToCtx.txt")
   "ProcessBundleToContext" should s"provide values ${file.toString} for x" in {
-    val cca = LoaderClassArguments(s"x = e.processBundleToContext /${file.getParent}/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(s"x = e.processBundleToContext /${file.getParent}/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
@@ -934,7 +934,7 @@ class ProcessBundleToContextTestSpec extends FlatSpec with Matchers with dummyRe
   }
 
   it should "provide empty string as value for x" in {
-    val cca = LoaderClassArguments(s"x = e.processBundleToContext /patternNotMatching/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(s"x = e.processBundleToContext /patternNotMatching/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
@@ -949,7 +949,7 @@ class ProcessFileToContextTestSpec extends FlatSpec with Matchers with dummyRefs
 
   val file = new File("/tmp/processFileToCtx.txt")
   "ProcessFileToContext" should s"provide values ${file.toString} for x" in {
-    val cca = LoaderClassArguments(s"x = e.processFileToContext /$file/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(s"x = e.processFileToContext /$file/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
@@ -960,7 +960,7 @@ class ProcessFileToContextTestSpec extends FlatSpec with Matchers with dummyRefs
   }
 
   it should "provide empty string as value for x" in {
-    val cca = LoaderClassArguments(s"x = e.processFileToContext /patternNotMatching/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(s"x = e.processFileToContext /patternNotMatching/ com.glassbeam.context.ProcessContext$$ParsableClass", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
@@ -980,7 +980,7 @@ class CombineLinesTestSpec extends FlatSpec with Matchers with dummyRefs {
   val pattern1 = s"combinelines($regex1, $regex2, $concatDelim , $replaceDelim)"
 
   "Combine lines" should "combine given lines" in {
-    val cca = LoaderClassArguments(pattern1, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments(pattern1, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, null, -1,"mps")
 
@@ -997,7 +997,7 @@ class AssertPxFileCountTestSpec extends FlatSpec with Matchers with MockFactory 
   val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
   val onFail = mockFunction[Long, String, Unit]
 
-  def getcca(context: String) = LoaderClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  def getcca(context: String) = ContextClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 
   def getapx(ctxLine: String, getPxCount: Long => Option[Long]) = {
     new AssertPxFileCount(getcca(ctxLine), getPxCount) {
@@ -1212,7 +1212,7 @@ class AssertBundleDuplicateTestSpec extends FlatSpec with Matchers with dummyRef
   val dummyCR = ContextReason(HashMap[String, String]("sysid" -> "", "mfr" -> "dummyMfr", "node" -> "Sol42"), "")
   val cefa = LoaderEvalArguments(dummyCR, null, 1L,"mps")
 
-  def getcca(context: String) = LoaderClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+  def getcca(context: String) = ContextClassArguments(context, 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
 
   "AssertBundleDuplicate with no inputs" should "succeed" in {
     val ctxLine = "b.assertBundleDuplicate"
@@ -1308,7 +1308,7 @@ class AssertBundleDuplicateTestSpec extends FlatSpec with Matchers with dummyRef
 
 class BPropertiesTestSpec extends FlatSpec with Matchers with dummyRefs {
   "BProperties" should "produce proper value for b.properties" in {
-    val cca = LoaderClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String]("propa" -> "valuea", "propb" -> "valueb", "propc" -> "valuec"), "")
     val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
     val responseContextReason = BProperties.getObject(cca).execute(cefa)
@@ -1316,7 +1316,7 @@ class BPropertiesTestSpec extends FlatSpec with Matchers with dummyRefs {
     responseContextReason.reason shouldBe empty
   }
   it should "return context reason without b.properties" in {
-    val cca = LoaderClassArguments("b.properties()", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("b.properties()", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String]("propa" -> "valuea", "propb" -> "valueb", "propc" -> "valuec"), "")
     val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
     val responseContextReason = BProperties.getObject(cca).execute(cefa)
@@ -1324,7 +1324,7 @@ class BPropertiesTestSpec extends FlatSpec with Matchers with dummyRefs {
     responseContextReason.reason shouldBe empty
   }
   it should "fail with reason of missing key " in {
-    val cca = LoaderClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
     val responseContextReason = BProperties.getObject(cca).execute(cefa)
@@ -1332,7 +1332,7 @@ class BPropertiesTestSpec extends FlatSpec with Matchers with dummyRefs {
   }
 
   it should "fail with reason empty value" in {
-    val cca = LoaderClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
+    val cca = ContextClassArguments("b.properties(propa,propb,propc)", 1, "dummyCust", "dummymanufacturer", "dummyProduct", "dummySchema")
     val cr = ContextReason(contextStrings = HashMap[String, String]("propa" -> "", "propb" -> "valueb", "propc" -> "valuec"), "")
     val cefa = LoaderEvalArguments(cr, null, 1L,"mps")
     val responseContextReason = BProperties.getObject(cca).execute(cefa)

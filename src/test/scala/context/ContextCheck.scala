@@ -2,7 +2,7 @@ package com.glassbeam.context
 
 import java.io.{File, PrintWriter}
 
-import com.glassbeam.context.Context.{ContextReason, LoaderClassArguments, LoaderEvalArguments}
+import com.glassbeam.context.Context.{ContextReason, ContextClassArguments, LoaderEvalArguments}
 
 //import com.glassbeam.loader.Init
 import org.scalacheck.Gen
@@ -40,7 +40,7 @@ trait ContextTest {
   val emptyCR = ContextReason(HashMap[String, String](), "")
   val emptyCEFA = LoaderEvalArguments(emptyCR, null, -1,"mps")
 
-  def getContextLine(contextline: String) = LoaderClassArguments(contextline, 1, "test_ec", "test_mfr", "test_prod", "test_sch")
+  def getContextLine(contextline: String) = ContextClassArguments(contextline, 1, "test_ec", "test_mfr", "test_prod", "test_sch")
 
   def getCEFA(cr: ContextReason): LoaderEvalArguments = LoaderEvalArguments(cr, null, -1,"mps")
 
@@ -161,11 +161,11 @@ class LCMPSTest extends PropSpec with GeneratorDrivenPropertyChecks with Context
   property("test context l.customer and similar functions") {
     forAll(genStringNonEmpty) {
       (seed: String) =>
-        val ccac = LoaderClassArguments("customer=l.customer", 1, "", "", "", "")
-        val ccap = LoaderClassArguments("product=l.product", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccam = LoaderClassArguments("manufacturer=l.manufacturer", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccas = LoaderClassArguments("schema=l.schema", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
-        val ccasnow = LoaderClassArguments("now=s.now", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccac = ContextClassArguments("customer=l.customer", 1, "", "", "", "")
+        val ccap = ContextClassArguments("product=l.product", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccam = ContextClassArguments("manufacturer=l.manufacturer", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccas = ContextClassArguments("schema=l.schema", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
+        val ccasnow = ContextClassArguments("now=s.now", 1, s"${seed}_ec", s"${seed}_mfr", s"${seed}_prod", s"${seed}_sch")
 
         val cr = ContextReason(HashMap[String, String]("ec" -> "test_ec"), "")
         val crc = new Lcustomer(ccac).execute(getCEFA(cr))

@@ -4,12 +4,14 @@ package com.glassbeam.context
   * Created by narayana on 18/4/16.
   */
 import java.util.Calendar
+
 import com.glassbeam.context.Context._
 import com.glassbeam.context.ContextSection.ContextSection
 import com.glassbeam.context.ContextStage.ContextStage
 import com.glassbeam.failuredefs.MsgTemplate
 import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.Logger
+
 import scala.collection.immutable.HashMap
 import scala.util.matching.Regex
 
@@ -31,19 +33,19 @@ trait WatcherContextStatement extends AbstractContextObject {
   val name:String
   val isAssignment = false
   val rhsRegex = null
-  def getObject(carg: LoaderClassArguments): AbstractWatcherContext
+  //def getObject(carg: LoaderClassArguments): AbstractWatcherContext
 }
 
 trait LoaderContextStatement extends AbstractContextObject {
   val isAssignment = false
   val rhsRegex = null
-  def getObject(carg: LoaderClassArguments): AbstractLoaderContext
+  def getObject(carg: ContextClassArguments): AbstractLoaderContext
 }
 
 trait LoaderContextAssignment extends AbstractContextObject {
   val isAssignment = true
   val fullRegex = """(.+?)=(.+?)""".r
-  def getObject(carg: LoaderClassArguments): AbstractLoaderContext
+  def getObject(carg: ContextClassArguments): AbstractLoaderContext
 }
 
 abstract class AbstractContextClass(carg:ClassArguments, ACO: AbstractContextObject)  {
@@ -73,7 +75,7 @@ abstract class AbstractContextClass(carg:ClassArguments, ACO: AbstractContextObj
 
 }
 
-abstract  class AbstractWatcherContext(warg:LoaderClassArguments,AWCO:AbstractContextObject) extends AbstractContextClass(warg:LoaderClassArguments,AWCO:AbstractContextObject) {
+abstract class AbstractWatcherContext(warg:ContextClassArguments,AWCO:AbstractContextObject) extends AbstractContextClass(warg:ContextClassArguments,AWCO:AbstractContextObject) {
 
   val (lhs, rhsSplit) =  getLhsRhsRegex
 
@@ -106,12 +108,12 @@ abstract  class AbstractWatcherContext(warg:LoaderClassArguments,AWCO:AbstractCo
         bundle_depth = rhsdepthmatch.lift(1) match {
           case Some(depth) => depth.toInt
           case None =>
-            UncompressLevel.logger.error(s"Bundle Depth not found for mps ${wefa.mps} for filename ${wefa.file_name}")
+            AWCO.logger.error(s"Bundle Depth not found for mps ${wefa.mps} for filename ${wefa.file_name}")
             return  bundle_depth
         }
       }
     }else{
-      UncompressLevel.logger.error(s"Uncompressel Level pattern has too many matches for mps ${wefa.mps} for filename ${wefa.file_name}")
+      AWCO.logger.error(s"Uncompressel Level pattern has too many matches for mps ${wefa.mps} for filename ${wefa.file_name}")
     }
     //println(s"for file name ${wefa.file_name} bundle depth is "+bundle_depth)
     bundle_depth
@@ -119,7 +121,7 @@ abstract  class AbstractWatcherContext(warg:LoaderClassArguments,AWCO:AbstractCo
 
 }
 
-abstract class AbstractLCPContext(farg:LCPClassArguments,FCO:AbstractContextObject) extends AbstractContextClass(farg: LCPClassArguments, FCO: AbstractContextObject) {
+abstract class AbstractLCPContext(farg:ContextClassArguments,FCO:AbstractContextObject) extends AbstractContextClass(farg: ContextClassArguments, FCO: AbstractContextObject) {
 
   val (lhs, rhsSplit) =  getLhsRhsRegex
 
@@ -137,7 +139,7 @@ abstract class AbstractLCPContext(farg:LCPClassArguments,FCO:AbstractContextObje
   }
 }
 
-abstract class AbstractLoaderContext(carg: LoaderClassArguments, ACO: AbstractContextObject) extends AbstractContextClass(carg: LoaderClassArguments, ACO: AbstractContextObject) {
+abstract class AbstractLoaderContext(carg: ContextClassArguments, ACO: AbstractContextObject) extends AbstractContextClass(carg: ContextClassArguments, ACO: AbstractContextObject) {
 
   val (lhs, rhsSplit) =  getLhsRhsRegex
 
@@ -151,7 +153,7 @@ abstract class AbstractLoaderContext(carg: LoaderClassArguments, ACO: AbstractCo
 
   def execute(cr: LoaderEvalArguments): ContextReason
 
-  def arg: LoaderClassArguments = carg
+  def arg: ContextClassArguments = carg
 
   def evalAssignment(callback: (String, List[String],LoaderEvalArguments) => ContextReason, cefa: LoaderEvalArguments) = {
     lhs == null || rhsSplit.isEmpty match {
