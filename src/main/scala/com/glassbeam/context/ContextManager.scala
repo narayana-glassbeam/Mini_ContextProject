@@ -15,15 +15,7 @@ object ContextSupervisor {
 
   val name = "ContextSupervisor"
 
-  val Cassandra = "Cassandra"
-
-  val Solr = "Solr"
-
-  val S3 = "S3Vault"
-
   def props = Props[ContextSupervisor]
-
-
 
 }
 
@@ -36,16 +28,21 @@ trait H2ContextProvider {
   def getContext(key:String) = ContextTableDao.getContextForKey(key)
 
   def getConfig(key:String) = asLines(LoaderDao.getValueForKey(key).mkString)
+
+  def getModidfiedContext(mps:String,ts:Timestamp) =  ContextTableDao.getModifiedContext(mps,ts)
+
 }
 
-trait CSCreationSupport extends  Logger {
+trait ContextManagerCreationSupport extends  Logger {
   this: ContextSupervisor =>
 
   val logger = Logging(this)
 
   def context: ActorContext
 
-  def createChild(props: Props, name: String): ActorRef = context.actorOf(props, name)
+  def createChild(props: Props, mps: String): ActorRef = context.actorOf(props, MpsContext.name(mps))
+
+  def getChild(actorName:String) = context.child(MpsContext.name(actorName))
 
   def forward[MPSType <: MPSRequest](msg:MPSType, actor_name: String) = {
 
@@ -59,26 +56,20 @@ trait CSCreationSupport extends  Logger {
 
 }
 
-class ContextSupervisor extends Actor with CSCreationSupport with H2ContextProvider {
-  import com.glassbeam.context.ContextSupervisor._
+class ContextSupervisor extends Actor with ContextManagerCreationSupport with H2ContextProvider {
+  import com.glassbeam.context.Constants._
 
   override def preStart() = {
     initializeAllMPS()
   }
 
-  val keytots: concurrent.Map[String, Timestamp] = new ConcurrentHashMap[String, Timestamp].asScala
+  val mpstots: concurrent.Map[String, Timestamp] = new ConcurrentHashMap[String, Timestamp].asScala
 
-//  lazy val cassConfig = asLines(getConfig(Cassandra).mkString)
-//
-//  lazy val solrConfig = asLines(getConfig(Solr).mkString)
-//
-//  lazy val s3Config = asLines(getConfig(S3).mkString)
+  lazy val cassConfig = getConfig(Cassandra.H2Key)
 
-  lazy val cassConfig = getConfig(Cassandra)
+  lazy val solrConfig = getConfig(Solr.H2Key)
 
-  lazy val solrConfig = getConfig(Solr)
-
-  lazy val s3Config = getConfig(S3)
+  //lazy val s3Config = getConfig(S3.H2Key)
 
   lazy val (mCommonCont,immCommonCont) = getContext("Common") match {
     case Some(commonContext) =>
@@ -90,27 +81,52 @@ class ContextSupervisor extends Actor with CSCreationSupport with H2ContextProvi
       (Array(""),Array(""))
   }
 
-  def initializeAllMPS() = getAllKeys().foreach(mpsKey => createMpsContext(mpsKey))
+  def initializeAllMPS() = getAllKeys().foreach(mpsKey => createContext(mpsKey))
 
-  def createMpsContext(key:String) = {
+  def createContext(mps:String) = {
 
-      getContext(key) match {
+      getContext(mps) match {
         case Some(mps_context) =>
-          keytots.putIfAbsent(key,mps_context._3)
-          val immMpsLines = asLines(mps_context._2)
           val mMpsLines   = asLines(mps_context._1)
+          val immMpsLines = asLines(mps_context._2)
+          mpstots.putIfAbsent(mps,mps_context._3)
           val mContextLines = mCommonCont ++ mMpsLines
-          val immContextLines = solrConfig ++ cassConfig ++ s3Config ++ immCommonCont ++ immMpsLines
-          createChild(MpsContext.props(key,immContextLines),MpsContext.name(key)) ! buildContext(key,mContextLines)
+          val immContextLines = solrConfig ++ cassConfig ++ immCommonCont ++ immMpsLines
+          createChild(MpsContext.props(mps,immContextLines),mps) //! BuildContext(mps,mContextLines)
         case None =>
           logger.info(s"No key found in h2 context table")
       }
 
   }
 
+  def updateContext(mps:String) = {
+
+    getModidfiedContext(mps,mpstots(mps)) match {
+      case Some(modified_context) =>
+        val mMpsLines   = asLines(modified_context._1)
+        mpstots.replace(mps,modified_context._2)
+        val mContextLines = mCommonCont ++ mMpsLines
+        getChild(mps) match {
+          case Some(mpsActor) =>
+            mpsActor ! BuildContext(mps,mContextLines)
+          case None =>
+            logger.info("Child actor not found check either actor name u are looking for or check keytots hash map")
+        }
+      case None =>
+        logger.info("Context is not modified ")
+    }
+  }
+
   def receive = {
 
     case csForwardMsg:MPSRequest => forward[MPSRequest](csForwardMsg,MpsContext.name(csForwardMsg.mps))
+
+    case BundleEvent(mps:String) =>
+      if(mpstots.contains(mps) ) {
+        updateContext(mps)
+      }else{
+        createContext(mps)
+      }
 
     case Done => logger.info("Done")
 

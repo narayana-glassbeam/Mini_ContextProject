@@ -45,8 +45,9 @@ class BundleContext(WatcherFunction:Map[String, Vector[AbstractWatcherContext]],
   def evalContext(mps:String,loadid:Long,filename:String):ContextReason = {
     val file_eval:File = new File(filename)
     var cr = ContextReason(HashMap[String, String](), "")
-    val contextInstances = LoaderFunction.get(mps).get
-    //contextInstances.foreach(f => println("lc name "+f.arg.context))
+    val assignmentInstances = LoaderFunction.getOrElse(LoaderAssignment.getName,Vector())
+    val statementInstances =  LoaderFunction.getOrElse(LoaderStatements.getName,Vector())
+    val contextInstances = Vector(assignmentInstances,statementInstances).flatten
     for(context_instance <- contextInstances;if cr.reason.isEmpty){
       try {
         val cefa = LoaderEvalArguments(cr, file_eval, loadid,mps)

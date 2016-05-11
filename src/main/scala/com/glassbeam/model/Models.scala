@@ -728,7 +728,7 @@ object ContextTableDao extends DatabaseAccess {
   }
 
   def getModifiedContext(key:String,ts:Timestamp) = withDatabasePool withDynSession {
-    ContextTable.filter(c => c.key === key && c.LastModified > ts).map(c => (c.value,c.LastModified)).run.headOption
+    ContextTable.filter(c => c.key === key && c.LastModified > ts).map(c => (c.mutable_value,c.LastModified)).run.headOption
   }
 
   def deleteAll() = withDatabasePool withDynSession {

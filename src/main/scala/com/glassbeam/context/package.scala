@@ -17,16 +17,12 @@ object Context {
 
   sealed trait Context
 
-//  trait ActorCreationSupport {
-//
-//    def createChild(props:Props,name:String):ActorRef
-//
-//    def forward[ReqTyp <: Context](msg:ReqTyp,actor_name:String)
-//  }
+  case class BundleEvent(mps:String) extends Context
 
   trait MPSRequest extends Context { def mps:String }
-  case class buildContext(mps:String,mMpsContextLines:Array[String]) extends MPSRequest
+  case class BuildContext(mps:String,mMpsContextLines:Array[String]) extends MPSRequest
   case class CreateBundleContext(loadid:Long,mps:String) extends MPSRequest
+  case class LCPValues(key:String,mps:String) extends MPSRequest
 
   trait BundleEval extends MPSRequest {
     def fileName:String
@@ -61,6 +57,7 @@ object Context {
     def mps:String
   }
 
+
   case class ContextReason(val contextStrings: HashMap[String, String], val reason: String, val failure: Option[ContextFailure] = None,
                            val bproperties: Option[Map[String, String]] = None)
   case class ContextClassArguments(context: String, linenum: Int, customer: String, manufacturer: String, product: String, schema: String) extends ClassArguments
@@ -71,6 +68,29 @@ object Context {
   case class WatcherEvalArguments(file_name:String,mps:String) extends EvalArguments
 
   case class MatchArguments(conline:String,cSection:ContextSection) extends Context
+
+}
+
+object Constants {
+
+  object Cassandra {
+    val H2Key:String = "Cassandra"
+    val prefix:String="Cass"
+  }
+
+  object Solr {
+    val H2Key  = "Solr"
+    val prefix = "Solr"
+  }
+
+  object S3 {
+    val H2Key = "S3Vault"
+    val prefix = "S3"
+  }
+
+  object Loader {
+    val prefix = "Loader"
+  }
 
 }
 
@@ -103,3 +123,6 @@ trait MLcpState {
   val contextSection:ContextSection = ContextSection.MutableState
   val contextStage:ContextStage = ContextStage.Loader
 }
+
+
+

@@ -59,11 +59,13 @@ abstract class AbstractContextClass(carg:ClassArguments, ACO: AbstractContextObj
           ACO.logger.error(s"assignment context function did NOT match assignment regex pattern: ${carg.context}")
           (null, None)
         case Some(eqSplit) =>
+          //println(" equi split value "+eqSplit)
           val (l, r) = (eqSplit.head.trim, eqSplit(1).trim)
           if (r.equals("''")) {
             (l, Some(List("")))
           } else {
             val rSplit = ACO.rhsRegex.unapplySeq(r)
+            println(" in ACC lhs "+l+" r "+r+" rhsSplit "+rSplit+" ACO.RHSRegex "+ACO.rhsRegex.pattern.matcher(r).matches())
             (l, rSplit)
           }
       }
@@ -125,6 +127,8 @@ abstract class AbstractLCPContext(farg:ContextClassArguments,FCO:AbstractContext
 
   val (lhs, rhsSplit) =  getLhsRhsRegex
 
+  println(" LCP Context lhs "+lhs+" rhs"+rhsSplit)
+
   def execute(cr: LCPEvalArguments): ContextReason
 
   def evalAssignment(callback: (String, List[String], LCPEvalArguments) => ContextReason, cefa: LCPEvalArguments) = {
@@ -134,6 +138,7 @@ abstract class AbstractLCPContext(farg:ContextClassArguments,FCO:AbstractContext
         FCO.logger.error(mps, err)
         ContextReason(new HashMap[String, String](), err, Some(AssignmentStmtError))
       case _ =>
+        println("For LCP Instances lhs "+lhs+" rhs "+rhsSplit.get)
         callback(lhs, rhsSplit.get, cefa)
     }
   }
