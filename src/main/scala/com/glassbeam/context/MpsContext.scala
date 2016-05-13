@@ -1,7 +1,6 @@
 package com.glassbeam.context
 
 import akka.actor.{Actor, ActorContext, ActorRef, Props}
-import com.glassbeam.context.Constants.{Cassandra, Loader, Solr}
 import com.glassbeam.context.Context._
 import com.glassbeam.context.ContextSection.ContextSection
 import com.glassbeam.model.ContextFailure._
@@ -34,7 +33,6 @@ trait MPSCreationSupport extends  Logger {
   }
 }
 
-
 object MpsContext  {
   import com.glassbeam.context.ContextHelpers._
 
@@ -51,7 +49,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
   import scala.collection.mutable.{HashMap => MutableH}
 
   override def preStart() = {
-    immContextLines.foreach(line => println(" immutable line "+line))
+//    immContextLines.foreach(line => println(" immutable line "+line))
     parseContext(immContextLines,ContextSection.ImmutableState)
   }
 
@@ -60,16 +58,16 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
 
   val lcpValues:MutableH[String,ContextReason] = MutableH.empty[String,ContextReason]
   // mps to mutable function abstract object (which will be evaluated)
-  val mutableLoaderInstances: MutableH[String, Vector[AbstractLoaderContext]] = MutableH.empty[String,Vector[AbstractLoaderContext]]
-  val immutableLoaderInstances: MutableH[String, Vector[AbstractLoaderContext]] = MutableH.empty[String,Vector[AbstractLoaderContext]]
+  val mutableLoaderInstances: MutableH[String, Vector[ALoaderContextExtract]] = MutableH.empty[String,Vector[ALoaderContextExtract]]
+  val immutableLoaderInstances: MutableH[String, Vector[ALoaderContextExtract]] = MutableH.empty[String,Vector[ALoaderContextExtract]]
 
-  val mutableWatcherInstances:MutableH[String, Vector[AbstractWatcherContext]] = MutableH.empty[String,Vector[AbstractWatcherContext]]
-  val immutableWatcherInstances:MutableH[String, Vector[AbstractWatcherContext]] = MutableH.empty[String,Vector[AbstractWatcherContext]]
+  val mutableWatcherInstances:MutableH[String, Vector[AWatcherContextExtract]] = MutableH.empty[String,Vector[AWatcherContextExtract]]
+  val immutableWatcherInstances:MutableH[String, Vector[AWatcherContextExtract]] = MutableH.empty[String,Vector[AWatcherContextExtract]]
 
-  val mutableLcpInstances:MutableH[String, Vector[AbstractLCPContext]] = MutableH.empty[String,Vector[AbstractLCPContext]]
-  val immutableLcpInstances:MutableH[String, Vector[AbstractLCPContext]] = MutableH.empty[String,Vector[AbstractLCPContext]]
+  val mutableLcpInstances:MutableH[String, Vector[ALCPContextExtract]] = MutableH.empty[String,Vector[ALCPContextExtract]]
+  val immutableLcpInstances:MutableH[String, Vector[ALCPContextExtract]] = MutableH.empty[String,Vector[ALCPContextExtract]]
 
-  def addLCInstances(key:String,cSection:ContextSection,inst:AbstractLoaderContext) = {
+  def addLCInstances(key:String,cSection:ContextSection,inst:ALoaderContextExtract) = {
     cSection match {
       case ContextSection.MutableState =>
         if (mutableLoaderInstances.contains (key) ) {
@@ -90,7 +88,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
     }
   }
 
-  def addWCInstances(key:String,cSection:ContextSection,inst:AbstractWatcherContext) = {
+  def addWCInstances(key:String,cSection:ContextSection,inst:AWatcherContextExtract) = {
     cSection match {
       case ContextSection.MutableState =>
         if (mutableWatcherInstances.contains (key) ) {
@@ -103,7 +101,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
       case ContextSection.ImmutableState =>
         if (immutableWatcherInstances.contains (key) ) {
           immutableWatcherInstances (key) = immutableWatcherInstances.get (key).get :+ inst
-          println ("added immutable  watcher context instance " + inst.lhs)
+          println ("added immutable  watcher context instance " + inst.getLhsRhsRegex)
         }else {
           immutableWatcherInstances += key -> Vector (inst)
           println ("added first immutable watcher context instance " + inst.lhs)
@@ -111,7 +109,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
     }
   }
 
-  def addLCPInstances(key:String,cSection:ContextSection,inst:AbstractLCPContext) = {
+  def addLCPInstances(key:String,cSection:ContextSection,inst:ALCPContextExtract) = {
 
     cSection match {
       case ContextSection.MutableState =>
@@ -146,7 +144,8 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
           val lca = ContextClassArguments(context,linenum,customer,manufacturer,product,schema)
           MatchArguments(context,cSection) match {
             case WatcherStatements(wp)  =>
-              val watInst = WatcherObject.getObject(lca,wp)
+              println(" watcher pattern found for "+wp.name)
+              val watInst = WatcherStatements.getObject(lca,wp)
               addWCInstances(wp.name,cSection,watInst)
             case LoaderStatements(ls)   =>
               val lstInst = ls.getObject(lca)
@@ -155,7 +154,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
               val lstInst = la.getObject(lca)
               addLCInstances(LoaderAssignment.getName,cSection,lstInst)
             case LcpStatements(ls,key)  =>
-              val lcpInst = LcpObject.getObject(lca,ls)
+              val lcpInst = LcpStatements.getObject(lca,ls)
               addLCPInstances(key,cSection,lcpInst)
             case x => println("Not matched with "+x.conline)
 
@@ -169,7 +168,6 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
       }
       linenum += 1
     }
-    println(" size of lcp instances = "+immutableLcpInstances.size+"\n size of solr insts "+immutableLcpInstances.get(Solr.prefix).get.length+"\n size of cass insts "+immutableLcpInstances.get(Cassandra.prefix).get.length+"\n size of loader instances "+immutableLcpInstances.get(Loader.prefix).get.length)
     logger.info(s"For MPS "+emps+" mutable lines "+ContextLines.mkString)
   }
 
@@ -177,13 +175,13 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
     var cr = ContextReason(HashMap[String, String](), "")
     val mutableInstances   = mutableLcpInstances.getOrElse(key,Vector())
     val immutableInstances = immutableLcpInstances.getOrElse(key,Vector())
-    println(s"\n\nIn Eval size of immutable ${key} insts "+immutableLcpInstances.get(key).get.length)
+//    println(s"\n\nIn Eval size of immutable ${key} insts "+immutableLcpInstances.get(key).get.length)
     val lcpInstances = Vector(mutableInstances,immutableInstances).flatten
-    println(s" in Eval size of combine lcp instances = "+lcpInstances.length)
+//    println(s" in Eval size of combine lcp instances = "+lcpInstances.length)
     lcpInstances.foreach(li =>
       try{
       val cefa = LCPEvalArguments(cr,mps)
-      println(" LCP EVAL "+cr.contextStrings.mkString+" for key "+key)
+//      println(" LCP EVAL "+cr.contextStrings.mkString+" for key "+key)
       cr = li.execute(cefa)
     }catch {
         case e:Exception =>
@@ -204,8 +202,8 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
       parseContext(mMpsContextLines,ContextSection.MutableState)
 
     case CreateBundleContext(loadid,mps) =>
-      val bundleWatcherInstances = mutableWatcherInstances.toMap[String,Vector[AbstractWatcherContext]]
-      val bundleLoaderInstances = mutableLoaderInstances.toMap[String,Vector[AbstractLoaderContext]]
+      val bundleWatcherInstances = mutableWatcherInstances.toMap[String,Vector[AWatcherContextExtract]]
+      val bundleLoaderInstances = mutableLoaderInstances.toMap[String,Vector[ALoaderContextExtract]]
       val child_props = BundleContext.props(loadid,mps,bundleWatcherInstances,bundleLoaderInstances)
       createChild(child_props._1,child_props._2)
 

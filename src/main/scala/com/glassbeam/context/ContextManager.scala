@@ -92,7 +92,7 @@ class ContextSupervisor extends Actor with ContextManagerCreationSupport with H2
           mpstots.putIfAbsent(mps,mps_context._3)
           val mContextLines = mCommonCont ++ mMpsLines
           val immContextLines = solrConfig ++ cassConfig ++ immCommonCont ++ immMpsLines
-          createChild(MpsContext.props(mps,immContextLines),mps) //! BuildContext(mps,mContextLines)
+          createChild(MpsContext.props(mps,immContextLines),mps) ! BuildContext(mps,mContextLines)
         case None =>
           logger.info(s"No key found in h2 context table")
       }

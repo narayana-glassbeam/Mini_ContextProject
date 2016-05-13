@@ -2,13 +2,13 @@ package com.glassbeam.context
 import akka.Done
 import akka.pattern.ask
 import akka.util.Timeout
-import com.glassbeam.context.Constants.Loader
+import com.glassbeam.context.Constants.{Cassandra, Loader, Solr}
 import com.glassbeam.context.Context._
 import com.glassbeam.model.{Logger, Opsdb}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 object ContextMain extends Logger {
@@ -54,33 +54,33 @@ object ContextMain extends Logger {
         val crreason = cr.reason
         val crbp = cr.bproperties.getOrElse("")
         val crfail = cr.failure.getOrElse("")
-        println(" context Strings are "+crstrings.mkString("\r\n"))
+        println("  \n\ncontext Strings are "+crstrings.mkString("\r\n"))
       case Failure(ex) =>
         println("exception " +ex)
     }
 //
-//    val solrValues = (contextSupervisor ? LCPValues(Solr.prefix,mps)).mapTo[ContextReason]
-//      solrValues.onComplete{
-//        case Success(cr) =>
-//          val crstrings = cr.contextStrings
-//          val crreason = cr.reason
-//          val crbp = cr.bproperties.getOrElse("")
-//          val crfail = cr.failure.getOrElse("")
-//          println(" context Strings are "+crstrings.mkString("\r\n"))
-//        case Failure(ex) =>
-//          println("exception " +ex)
-//      }
-//    val cassValues = (contextSupervisor ? LCPValues(Cassandra.prefix,mps)).mapTo[ContextReason]
-//      cassValues.onComplete{
-//        case Success(cr) =>
-//          val crstrings = cr.contextStrings
-//          val crreason = cr.reason
-//          val crbp = cr.bproperties.getOrElse("")
-//          val crfail = cr.failure.getOrElse("")
-//          println(" context Strings are "+crstrings.mkString("\r\n"))
-//        case Failure(ex) =>
-//          println("exception " +ex)
-//      }
+    val solrValues = (contextSupervisor ? LCPValues(Solr.prefix,mps)).mapTo[ContextReason]
+      solrValues.onComplete{
+        case Success(cr) =>
+          val crstrings = cr.contextStrings
+          val crreason = cr.reason
+          val crbp = cr.bproperties.getOrElse("")
+          val crfail = cr.failure.getOrElse("")
+          println(" \n\ncontext Strings are "+crstrings.mkString("\r\n"))
+        case Failure(ex) =>
+          println("exception " +ex)
+      }
+    val cassValues = (contextSupervisor ? LCPValues(Cassandra.prefix,mps)).mapTo[ContextReason]
+      cassValues.onComplete{
+        case Success(cr) =>
+          val crstrings = cr.contextStrings
+          val crreason = cr.reason
+          val crbp = cr.bproperties.getOrElse("")
+          val crfail = cr.failure.getOrElse("")
+          println("  \n\ncontext Strings are "+crstrings.mkString("\r\n"))
+        case Failure(ex) =>
+          println("exception " +ex)
+      }
 
     contextSupervisor ! Done
   }

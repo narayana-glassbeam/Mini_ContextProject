@@ -6,7 +6,6 @@ import akka.actor.{Actor, Props}
 import com.glassbeam.context.Context._
 import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.Logger
-import com.glassbeam.context.WatcherStatements._
 
 import scala.collection.immutable.HashMap
 
@@ -14,13 +13,13 @@ object BundleContext {
 
   def bundleContext_name(loadid:Long) = "context_"+loadid
 
-  def props(loadid:Long, mps:String, MWCache:Map[String, Vector[AbstractWatcherContext]], MLCache:Map[String, Vector[AbstractLoaderContext]]) = {
+  def props(loadid:Long, mps:String, MWCache:Map[String, Vector[AWatcherContextExtract]], MLCache:Map[String, Vector[ALoaderContextExtract]]) = {
     (Props(classOf[BundleContext],MWCache,MLCache,loadid,mps),bundleContext_name(loadid))
   }
 
 }
 
-class BundleContext(WatcherFunction:Map[String, Vector[AbstractWatcherContext]],LoaderFunction:Map[String, Vector[AbstractLoaderContext]],loadid:Long,emps:String) extends Actor with Logger {
+class BundleContext(WatcherFunction:Map[String, Vector[AWatcherContextExtract]], LoaderFunction:Map[String, Vector[ALoaderContextExtract]], loadid:Long, emps:String) extends Actor with Logger {
 
   private val logger = Logging(this)
 
@@ -28,16 +27,13 @@ class BundleContext(WatcherFunction:Map[String, Vector[AbstractWatcherContext]],
   def isFileMatched(fileName:String,ContextPatternName:String):Boolean = {
 
     val wca = WatcherEvalArguments(fileName,emps)
-    var filematched = false
-    WatcherFunction.get(ContextPatternName) match {
+
+     WatcherFunction.get(ContextPatternName) match {
       case Some(instances) =>
-        instances.foreach(inst =>  if(!filematched) {
-          filematched = inst.evalFileMatchesPattern(wca)
-        })
-        filematched
+          instances.exists(inst => inst.evalFileMatchesPattern(wca))
       case None =>
         logger.error(s"No ContextIsntances Found for $ContextPatternName")
-        filematched
+        false
     }
 
   }
@@ -64,34 +60,34 @@ class BundleContext(WatcherFunction:Map[String, Vector[AbstractWatcherContext]],
 
   def receive = {
 
-    case DeleteFile(fileName,mps,loadid)=> sender ! isFileMatched(fileName,DelPat.toString)
+    case DeleteFile(fileName,mps,loadid)=> sender ! isFileMatched(fileName,DelPat.name)
 
-    case SkipFile(fileName,mps,loadid) =>  sender ! isFileMatched(fileName,SkipPat.toString)
+    case SkipFile(fileName,mps,loadid) =>  sender ! isFileMatched(fileName,SkipPat.name)
 
-    case BinaryFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,BinaryPat.toString)
+    case BinaryFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,BinaryPat.name)
 
-    case ReverseFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,ReversePat.toString)
+    case ReverseFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,ReversePat.name)
 
-    case TextFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,TextPat.toString)
+    case TextFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,TextPat.name)
 
-    case IncludeVaultFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,IncVaultPat.toString)
+    case IncludeVaultFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,IncVaultPat.name)
 
-    case IncludeParseFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,IncParsePat.toString)
+    case IncludeParseFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,IncParsePat.name)
 
-    case MostRecentFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,MostRecPat.toString)
+    case MostRecentFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,MostRecPat.name)
 
-    case ExtensibilityFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,ProcessFilePat.toString)
+    case ExtensibilityFile(fileName,mps,loadid) => sender ! isFileMatched(fileName,ProcessFilePat.name)
 
     case UncompressBundleDepth(fileName,mps,loadid) =>
       val wca = WatcherEvalArguments(fileName,emps)
-      var depth:Int = 0
-      WatcherFunction.get(UncompressLevelPat.toString) match {
-        case Some(insts) =>
-          insts.foreach(uncompressInst =>{ depth = uncompressInst.evalUncompressLevel(wca)})
+      val result:Int = WatcherFunction.get(UncompressLevelPat.name) match {
+        case Some(insts) => insts.view.map(_.evalUncompressLevel(wca)).head
         case None =>
           logger.error(s" MaxUncompresLevel not found for file name ${fileName} for mps ${emps}")
+          5
       }
-      sender ! depth
+
+      sender ! result
 
     case EvalFileContext(filename,mps,loadid) => sender ! evalContext(mps,loadid,filename)
 

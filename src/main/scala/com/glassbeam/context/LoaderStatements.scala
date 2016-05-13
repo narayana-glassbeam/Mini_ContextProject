@@ -28,7 +28,7 @@ object AssertUncompressionFail extends LoaderContextStatement with MLoaderState 
   def getObject(carg: ContextClassArguments) = new AssertUncompressionFail(carg)
 }
 
-class AssertUncompressionFail(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertUncompressionFail)  {
+class AssertUncompressionFail(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertUncompressionFail)  {
 
   import AssertUncompressionFail._
 
@@ -92,7 +92,7 @@ object Assert extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new Assert(carg)
 }
 
-class Assert(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Assert)  {
+class Assert(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Assert)  {
 
   import Assert._
 
@@ -128,7 +128,7 @@ object AssertPxFileCount extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new AssertPxFileCount(carg, pxCountObtainer)
 }
 
-class AssertPxFileCount(carg: ContextClassArguments, getPxCount: Long => Option[Long]) extends AbstractLoaderContext(carg, AssertPxFileCount) with MLoaderState  {
+class AssertPxFileCount(carg: ContextClassArguments, getPxCount: Long => Option[Long]) extends ALoaderContextExtract(carg, AssertPxFileCount) with MLoaderState  {
 
   import AssertPxFileCount._
 
@@ -183,7 +183,7 @@ object Validate extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new Validate(carg, valueObtainerForKey)
 }
 
-class Validate(carg: ContextClassArguments, valueObtainerForKey: (String, String) => Seq[String]) extends AbstractLoaderContext(carg, Validate)  {
+class Validate(carg: ContextClassArguments, valueObtainerForKey: (String, String) => Seq[String]) extends ALoaderContextExtract(carg, Validate)  {
 
   import Validate._
 
@@ -213,7 +213,7 @@ object CombineLines extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new CombineLines(carg)
 }
 
-class CombineLines(carg: ContextClassArguments) extends AbstractLoaderContext(carg, CombineLines)  {
+class CombineLines(carg: ContextClassArguments) extends ALoaderContextExtract(carg, CombineLines)  {
 
   import CombineLines._
 
@@ -235,7 +235,7 @@ object Encoding extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new Encoding(carg)
 }
 
-class Encoding(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Encoding)  {
+class Encoding(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Encoding)  {
 
   import Encoding._
 
@@ -277,7 +277,7 @@ object AssertTruthy extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new AssertTruthy(carg)
 }
 
-class AssertTruthy(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertTruthy)  {
+class AssertTruthy(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertTruthy)  {
 
   import AssertTruthy._
 
@@ -368,7 +368,7 @@ object BPropertiesIdHelper extends Logger {
 
 }
 
-class BProperties(carg: ContextClassArguments) extends AbstractLoaderContext(carg, BProperties)  {
+class BProperties(carg: ContextClassArguments) extends ALoaderContextExtract(carg, BProperties)  {
 
   private val emps = carg.customer + filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
 
@@ -384,7 +384,7 @@ object BId extends LoaderContextStatement with MLoaderState {
   def getObject(carg: ContextClassArguments) = new BId(carg)
 }
 
-class BId(carg: ContextClassArguments) extends AbstractLoaderContext(carg, BId)  {
+class BId(carg: ContextClassArguments) extends ALoaderContextExtract(carg, BId)  {
 
   private val emps = carg.customer + filesep + carg.manufacturer + filesep + carg.product + filesep + carg.schema
 
@@ -404,7 +404,7 @@ object AssertBundleDuplicate extends LoaderContextStatement with MLoaderState {
 }
 
 
-class AssertBundleDuplicate(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertBundleDuplicate)  {
+class AssertBundleDuplicate(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertBundleDuplicate)  {
   import AssertBundleDuplicate._
   def assertBundleDuplicate(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     val optTemplate = if (assertOptionalTemplateId.isDefined) assertOptionalTemplateId.get else ""
@@ -426,7 +426,7 @@ object AssertBundleFail extends LoaderContextStatement with MLoaderState {
   override def getObject(carg: ContextClassArguments) = new AssertBundleFail(carg)
 }
 
-class AssertBundleFail(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertBundleFail)  {
+class AssertBundleFail(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertBundleFail)  {
   private val logger = Logging(this)
 
   private def evalArgs(texts: Option[List[String]], cefa: LoaderEvalArguments) = {

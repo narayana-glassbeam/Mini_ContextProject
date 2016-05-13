@@ -927,7 +927,7 @@ class ProcessBundleToContextTestSpec extends FlatSpec with Matchers with dummyRe
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
-    val responseContextReason = ProcessBundleToContext.getObject(cca).execute(cefa)
+    val responseContextReason = ProcessBundleToContextExtract.getObject(cca).execute(cefa)
     responseContextReason.contextStrings("x") shouldBe file.toString
     responseContextReason.reason shouldBe empty
     responseContextReason.failure shouldBe None
@@ -938,7 +938,7 @@ class ProcessBundleToContextTestSpec extends FlatSpec with Matchers with dummyRe
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
-    val responseContextReason = ProcessBundleToContext.getObject(cca).execute(cefa)
+    val responseContextReason = ProcessBundleToContextExtract.getObject(cca).execute(cefa)
     responseContextReason.contextStrings("x") shouldBe ""
     responseContextReason.reason shouldBe empty
     responseContextReason.failure shouldBe None
@@ -953,7 +953,7 @@ class ProcessFileToContextTestSpec extends FlatSpec with Matchers with dummyRefs
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
-    val responseContextReason = ProcessFileToContext.getObject(cca).execute(cefa)
+    val responseContextReason = ProcessFileToContextExtract.getObject(cca).execute(cefa)
     responseContextReason.contextStrings("x") shouldBe file.toString
     responseContextReason.reason shouldBe empty
     responseContextReason.failure shouldBe None
@@ -964,7 +964,7 @@ class ProcessFileToContextTestSpec extends FlatSpec with Matchers with dummyRefs
     val cr = ContextReason(contextStrings = HashMap.empty[String, String], "")
     val cefa = LoaderEvalArguments(cr, file, -1,"mps")
 
-    val responseContextReason = ProcessFileToContext.getObject(cca).execute(cefa)
+    val responseContextReason = ProcessFileToContextExtract.getObject(cca).execute(cefa)
     responseContextReason.contextStrings("x") shouldBe ""
     responseContextReason.reason shouldBe empty
     responseContextReason.failure shouldBe None

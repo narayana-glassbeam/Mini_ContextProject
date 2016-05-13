@@ -5,33 +5,66 @@ import com.glassbeam.context.ContextStage.{apply => _}
 
 import scala.util.matching.Regex
 
+case class WatcherInstanceExtract(warg:ContextClassArguments, wop:WatcherContextStatement) extends AWatcherContextExtract(warg,wop)
 
-abstract class WatcherContextPattern(val fullRegex:Regex,val name:String) extends WatcherContextStatement
+object WatcherStatements {
 
-case class WatcherInstance(warg:ContextClassArguments,WOP:WatcherContextPattern) extends AbstractWatcherContext(warg,WOP)
+  val watcherPatterns:Array[WatcherContextStatement] = Array(DelPat,SkipPat,IncVaultPat,IncParsePat,BinaryPat,TextPat,ReversePat,MostRecPat,ProcessFilePat,UncompressLevelPat)
 
-object WatcherObject {
-  def getObject(carg: ContextClassArguments,WOP:WatcherContextPattern): AbstractWatcherContext = WatcherInstance(carg:ContextClassArguments,WOP:WatcherContextPattern)
+  def getObject(carg: ContextClassArguments,wo:WatcherContextStatement): AWatcherContextExtract = WatcherInstanceExtract(carg:ContextClassArguments,wo:WatcherContextStatement)
+
+  def unapply(ma:MatchArguments): Option[WatcherContextStatement] = watcherPatterns.find(wopat => wopat.fullRegex.pattern.matcher(ma.conline).matches() && wopat.contextSection == ma.cSection)
 }
 
-object WatcherStatements extends Enumeration {
+object DelPat extends WatcherContextStatement with MWatcherState {
+     override val name = "DeletePattern"
+     override val fullRegex: Regex = """\s*(?i)f.deletefiles\s*=(.+?)""".r
+}
 
-  val DelPat,SkipPat,IncVaultPat,IncParsePat,BinaryPat,TextPat,ReversePat,MostRecPat,ProcessFilePat,UncompressLevelPat = Value
+object SkipPat extends WatcherContextStatement with MWatcherState {
+     override val name = "SkipPattern"
+     override val fullRegex:Regex = """\s*(?i)f.skipfiles\s*=(.+?)""".r
+}
+ 
+ 
+object IncVaultPat extends WatcherContextStatement with MWatcherState {
+     override val name = "IncludeVaultPattern"
+     override val fullRegex:Regex = """\s*(?i)f.includevault\s*=(.+?)""".r
+}
 
-  def getDefinition(typ:Value):WatcherContextPattern = typ match {
-    case DelPat               => new WatcherContextPattern("""\s*(?i)f.deletefiles\s*=(.+?)""".r,DelPat.toString) with MWatcherState
-    case SkipPat              => new WatcherContextPattern("""\s*(?i)f.skipfiles\s*=(.+?)""".r,SkipPat.toString) with MWatcherState
-    case IncVaultPat          => new WatcherContextPattern("""\s*(?i)f.includevault\s*=(.+?)""".r,IncVaultPat.toString) with MWatcherState
-    case IncParsePat          => new WatcherContextPattern("""\s*(?i)f.includeparse\s*=(.+?)""".r,IncParsePat.toString) with MWatcherState
-    case BinaryPat            => new WatcherContextPattern("""\s*(?i)f.binary\s*=(.+?)""".r,BinaryPat.toString) with MWatcherState
-    case TextPat              => new WatcherContextPattern("""\s*(?i)f.text\s*=(.+?)""".r,TextPat.toString) with MWatcherState
-    case ReversePat           => new WatcherContextPattern("""\s*(?i)f.reversefiles\s*=(.+?)""".r,ReversePat.toString) with MWatcherState
-    case MostRecPat           => new WatcherContextPattern("""f.selectFile\s*\((.+?)\)\s*$""".r,MostRecPat.toString) with MWatcherState
-    case ProcessFilePat       => new WatcherContextPattern("""e.processToFile\s+/(.+?)/\s+(.+?)""".r,ProcessFilePat.toString) with MWatcherState
-    case UncompressLevelPat   => new WatcherContextPattern("""b.uncompress.level\s+/(.+?)/\s+(\d+)""".r,UncompressLevelPat.toString) with MWatcherState
-  }
+object IncParsePat extends WatcherContextStatement with MWatcherState {
+     override val name = "IncludeParsePattern"
+     override val fullRegex:Regex = """\s*(?i)f.includeparse\s*=(.+?)""".r
+}
 
-  def unapply(ma:MatchArguments): Option[WatcherContextPattern] = this.values.map(getDefinition).find(wopat => wopat.fullRegex.pattern.matcher(ma.conline).matches() && wopat.contextSection == ma.cSection)
+object BinaryPat extends WatcherContextStatement with MWatcherState {
+  override val name = "BinaryFilePattern"
+  override val fullRegex: Regex = """\s*(?i)f.binary\s*=(.+?)""".r
+}
+
+object TextPat extends WatcherContextStatement with MWatcherState {
+     override val name = "TextFilePattern"
+     override val fullRegex:Regex = """\s*(?i)f.text\s*=(.+?)""".r
+}
+
+object ReversePat extends WatcherContextStatement with MWatcherState {
+     override val name = "ReversePattern"
+     override val fullRegex:Regex = """\s*(?i)f.reversefiles\s*=(.+?)""".r
+}
+ 
+object MostRecPat extends WatcherContextStatement with MWatcherState {
+     override val name = "MostRecentPattern"
+     override val fullRegex:Regex = """f.selectFile\s*\((.+?)\)\s*$""".r
+}
+
+object ProcessFilePat extends WatcherContextStatement with MWatcherState {
+     override val name = "ProcessFilePattern"
+     override val fullRegex:Regex = """e.processToFile\s+/(.+?)/\s+(.+?)""".r
+}
+
+object UncompressLevelPat extends WatcherContextStatement with MWatcherState {
+  override val name = "UncompressPattern"
+  override val fullRegex: Regex = """b.uncompress.level\s+/(.+?)/\s+(\d+)""".r
 }
 
 

@@ -6,12 +6,11 @@ import java.util.Date
 import java.util.concurrent.Callable
 
 import com.glassbeam.context.Context.{ContextClassArguments, ContextReason, LoaderEvalArguments, MatchArguments}
+import com.glassbeam.context.ContextHelpers._
 import com.glassbeam.model.ContextFailure._
 import com.glassbeam.model.StartupConfig._
 import com.glassbeam.model._
 import com.google.common.cache.{Cache, CacheBuilder}
-import com.glassbeam.context.ContextHelpers._
-import com.glassbeam.context.ContextSection.ContextSection
 import com.ximpleware.{VTDGen, VTDNav}
 import icons.{Icon, XmlParser}
 
@@ -35,17 +34,17 @@ object LoaderAssignment extends Enumeration {
     Bname, Bsize, Bgrep, BfnameGrep, // Bundle level
     AssertFileDuplicate, AssertNumeric, // Assertions in assignment form
     Concat, Coalesce, Lookup, XmlValue, // Variable level functions
-    ProcessFileToContext, ProcessBundleToContext // Extensibility functions
+    ProcessFileToContextExtract, ProcessBundleToContextExtract // Extensibility functions
   )
 
-  def assignMatch(defn: AbstractContextObject, context: String): Boolean = {
-    val rhsOption: Option[List[String]] = defn.fullRegex.unapplySeq(context)
+  def assignMatch(defn: AbstractContextPattern, context: String): Boolean = {
+    val rhsOption: Option[List[String]] = defn.assign.unapplySeq(context)
     rhsOption match {
       case None => false
       case Some(rhs) =>
         rhs.length match {
           case 2 =>
-            defn.rhsRegex.pattern.matcher(rhs(1).trim).matches()
+            defn.rhsRegex.get.pattern.matcher(rhs(1).trim).matches()
           case _ => false
         }
     }
@@ -57,12 +56,12 @@ object LoaderAssignment extends Enumeration {
 
 
 object Literal extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """'(.*)'\s*$""".r
+  val rhsRegex = Some("""'(.*)'\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Literal(carg)
 }
 
-class Literal(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Literal)  {
+class Literal(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Literal)  {
   private def literal(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val value = texts.head.trim
     ContextReason(cefa.cr.contextStrings + (lhs -> value), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
@@ -75,12 +74,12 @@ class Literal(carg: ContextClassArguments) extends AbstractLoaderContext(carg, L
  * Context function to concatenate multiple values
  */
 object Concat extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^s.concat\((.*)\)\s*$""".r
+  val rhsRegex = Some("""^s.concat\((.*)\)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Concat(carg)
 }
 
-class Concat(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Concat)  {
+class Concat(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Concat)  {
   private def concat(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val text = texts.head.trim
     val pvals = for (pval <- text.split(",")) yield getParm(pval.trim, cefa.cr.contextStrings)
@@ -94,12 +93,12 @@ class Concat(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Co
   * Context function to Coalesce multiple values
   */
 object Coalesce extends LoaderContextAssignment with MLoaderState  {
-  val rhsRegex = """^s.coalesce\((.+?)\)\s*$""".r
+  val rhsRegex = Some("""^s.coalesce\((.+?)\)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Coalesce(carg)
 }
 
-class Coalesce(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Coalesce) {
+class Coalesce(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Coalesce) {
 
   import Coalesce._
 
@@ -128,19 +127,19 @@ class Coalesce(carg: ContextClassArguments) extends AbstractLoaderContext(carg, 
   * L.Grep
   */
 object Lgrep extends LoaderContextAssignment  with MLoaderState {
-  val rhsRegex = """^l.grep(\w+)\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^l.grep(\w+)\s+/(.+?)/\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Lgrep(carg)
 }
 
-class Lgrep(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lgrep) {
+class Lgrep(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Lgrep) {
 
   import Lgrep._
 
   private val eqSplit = fullRegex.unapplySeq(carg.context).get
   private val (l, r) = (eqSplit.head.trim, eqSplit(1).trim)
   private val lgrepdest: Array[String] = l.substring(1, l.length() - 1).split(",")
-  private val rSplit = rhsRegex.unapplySeq(r).get
+  private val rSplit = rhsRegex.get.unapplySeq(r).get
   private val (r1, r2) = (rSplit.head, rSplit(1))
 
   def execute(cefa: LoaderEvalArguments): ContextReason = {
@@ -172,12 +171,12 @@ class Lgrep(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lgr
   Lcustomer
  */
 object Lcustomer extends LoaderContextAssignment  with MLoaderState {
-  val rhsRegex = """^l.customer\s*$""".r
+  val rhsRegex = Some("""^l.customer\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Lcustomer(carg)
 }
 
-class Lcustomer(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lcustomer)  {
+class Lcustomer(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Lcustomer)  {
 
   import Lcustomer._
 
@@ -199,12 +198,12 @@ class Lcustomer(carg: ContextClassArguments) extends AbstractLoaderContext(carg,
   Lproduct
  */
 object Lproduct extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^l.product\s*$""".r
+  val rhsRegex = Some("""^l.product\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Lproduct(carg)
 }
 
-class Lproduct(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lproduct) {
+class Lproduct(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Lproduct) {
   private def lproduct(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> carg.product), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -215,12 +214,12 @@ class Lproduct(carg: ContextClassArguments) extends AbstractLoaderContext(carg, 
   Lmanufacturer
  */
 object Lmanufacturer extends LoaderContextAssignment with MLoaderState  {
-  val rhsRegex = """^l.manufacturer\s*$""".r
+  val rhsRegex = Some("""^l.manufacturer\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Lmanufacturer(carg)
 }
 
-class Lmanufacturer(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lmanufacturer) {
+class Lmanufacturer(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Lmanufacturer) {
   private def lmanufacturer(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> carg.manufacturer), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -231,12 +230,12 @@ class Lmanufacturer(carg: ContextClassArguments) extends AbstractLoaderContext(c
   Lschema
  */
 object Lschema extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^l.schema\s*$""".r
+  val rhsRegex = Some("""^l.schema\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Lschema(carg)
 }
 
-class Lschema(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Lschema)  {
+class Lschema(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Lschema)  {
   private def lschema(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> carg.schema), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -247,12 +246,12 @@ class Lschema(carg: ContextClassArguments) extends AbstractLoaderContext(carg, L
   Snow
  */
 object Snow extends LoaderContextAssignment  with MLoaderState  {
-  val rhsRegex = """^s.now\s*$""".r
+  val rhsRegex = Some("""^s.now\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Snow(carg)
 }
 
-class Snow(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Snow) {
+class Snow(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Snow) {
   private def snow(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> System.currentTimeMillis.toString), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -263,12 +262,12 @@ class Snow(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Snow
   Fdate
  */
 object Fdate extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^f.date\s*$""".r
+  val rhsRegex = Some("""^f.date\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Fdate(carg)
 }
 
-class Fdate(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fdate)  {
+class Fdate(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Fdate)  {
   private def fdate(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> Option(cefa.file).fold("None")(_.lastModified.toString)), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -279,12 +278,12 @@ class Fdate(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fda
   Fname
  */
 object Fname extends LoaderContextAssignment with MLoaderState  {
-  val rhsRegex = """^f.name\s*$""".r
+  val rhsRegex = Some("""^f.name\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Fname(carg)
 }
 
-class Fname(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fname) {
+class Fname(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Fname) {
   private def fname(lhs: String, texts: List[String], cefa:LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> cefa.file.getName), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -295,12 +294,12 @@ class Fname(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fna
   Fpath
  */
 object Fpath extends LoaderContextAssignment  with MLoaderState {
-  val rhsRegex = """^f.path\s*$""".r
+  val rhsRegex = Some("""^f.path\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Fpath(carg)
 }
 
-class Fpath(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fpath) {
+class Fpath(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Fpath) {
   private def fpath(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> cefa.file.getPath), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -311,12 +310,12 @@ class Fpath(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Fpa
   Flength
  */
 object Flength extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^f.length\s*$""".r
+  val rhsRegex = Some("""^f.length\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Flength(carg)
 }
 
-class Flength(carg: ContextClassArguments) extends AbstractLoaderContext(carg, Flength)  {
+class Flength(carg: ContextClassArguments) extends ALoaderContextExtract(carg, Flength)  {
   private def flength(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> cefa.file.length().toString), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -327,13 +326,13 @@ class Flength(carg: ContextClassArguments) extends AbstractLoaderContext(carg, F
   Bname
  */
 object Bname extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^b.name\s*$""".r
+  val rhsRegex = Some("""^b.name\s*$""".r)
   val bundleNameObtainer: File => String = file => getBundleNameSize(file.getAbsolutePath)._1
 
   def getObject(carg: ContextClassArguments) = new Bname(carg,bundleNameObtainer)
 }
 
-class Bname(carg: ContextClassArguments,bundleNameObtainer: File => String) extends AbstractLoaderContext(carg, Bname) {
+class Bname(carg: ContextClassArguments,bundleNameObtainer: File => String) extends ALoaderContextExtract(carg, Bname) {
   private def bname(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     if (cefa.file != null)
       ContextReason(cefa.cr.contextStrings + (lhs -> bundleNameObtainer(cefa.file)), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
@@ -348,13 +347,13 @@ class Bname(carg: ContextClassArguments,bundleNameObtainer: File => String) exte
   Bsize
  */
 object Bsize extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^b.size\s*$""".r
+  val rhsRegex = Some("""^b.size\s*$""".r)
    val bundleSizeObtainer: File => Long = file => getBundleNameSize(file.getAbsolutePath)._2
 
   def getObject(carg: ContextClassArguments) = new Bsize(carg, bundleSizeObtainer)
 }
 
-class Bsize(carg: ContextClassArguments,bundleSizeObtainer:File =>Long) extends AbstractLoaderContext(carg, Bsize) {
+class Bsize(carg: ContextClassArguments,bundleSizeObtainer:File =>Long) extends ALoaderContextExtract(carg, Bsize) {
   private def bsize(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason =
     ContextReason(cefa.cr.contextStrings + (lhs -> bundleSizeObtainer(cefa.file).toString), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
 
@@ -366,12 +365,12 @@ class Bsize(carg: ContextClassArguments,bundleSizeObtainer:File =>Long) extends 
  */
 object AssertFileDuplicate extends LoaderContextAssignment with MLoaderState  {
   val fnName = "f.duplicate"
-  val rhsRegex = raw"""^$fnName\s*\((.+?)\)\s*$$""".r
+  val rhsRegex = Some(raw"""^$fnName\s*\((.+?)\)\s*$$""".r)
 
   def getObject(carg: ContextClassArguments) = new AssertFileDuplicate(carg)
 }
 
-class AssertFileDuplicate(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertFileDuplicate) {
+class AssertFileDuplicate(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertFileDuplicate) {
 
   import AssertFileDuplicate._
 
@@ -415,12 +414,12 @@ class AssertFileDuplicate(carg: ContextClassArguments) extends AbstractLoaderCon
   SDF to epoch
  */
 object SDF2EPOCH extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^sdf2epoch\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
+  val rhsRegex = Some("""^sdf2epoch\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new SDF2EPOCH(carg)
 }
 
-class SDF2EPOCH(carg: ContextClassArguments) extends AbstractLoaderContext(carg, SDF2EPOCH) {
+class SDF2EPOCH(carg: ContextClassArguments) extends ALoaderContextExtract(carg, SDF2EPOCH) {
 
   import SDF2EPOCH._
 
@@ -458,12 +457,12 @@ class SDF2EPOCH(carg: ContextClassArguments) extends AbstractLoaderContext(carg,
   epoch to SDF
  */
 object EPOCH2SDF extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^epoch2sdf\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r
+  val rhsRegex = Some("""^epoch2sdf\s+'(.+?)'\s*,\s*([\w_]+)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new EPOCH2SDF(carg)
 }
 
-class EPOCH2SDF(carg: ContextClassArguments) extends AbstractLoaderContext(carg, EPOCH2SDF)  {
+class EPOCH2SDF(carg: ContextClassArguments) extends ALoaderContextExtract(carg, EPOCH2SDF)  {
 
   import EPOCH2SDF._
 
@@ -503,12 +502,12 @@ class EPOCH2SDF(carg: ContextClassArguments) extends AbstractLoaderContext(carg,
   FnameGrep
  */
 object FnameGrep extends LoaderContextAssignment with MLoaderState  {
-  val rhsRegex = """^fname.grep\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^fname.grep\s+/(.+?)/\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new FnameGrep(carg)
 }
 
-class FnameGrep(carg: ContextClassArguments) extends AbstractLoaderContext(carg, FnameGrep) {
+class FnameGrep(carg: ContextClassArguments) extends ALoaderContextExtract(carg, FnameGrep) {
   private def fnameGrep(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val text = texts.head.trim
     val re = new Regex(text)
@@ -526,7 +525,7 @@ class FnameGrep(carg: ContextClassArguments) extends AbstractLoaderContext(carg,
   Fgrep
  */
 // Todo remove this class as it only wraps a pure function as method 
-abstract class FgrepHelper(carg: ContextClassArguments, ACO: AbstractContextObject) extends AbstractLoaderContext(carg, ACO) {
+abstract class FgrepHelper(carg: ContextClassArguments, ACO: AbstractContextPattern) extends ALoaderContextExtract(carg, ACO) {
   protected def fgrep(f: File, cx: HashMap[String, String], r: Regex*): String = {
     val source = Source.fromFile(f)(getFileCodec(cx))
     val lines = source.getLines
@@ -550,7 +549,7 @@ abstract class FgrepHelper(carg: ContextClassArguments, ACO: AbstractContextObje
 }
 
 object Fgrep extends LoaderContextAssignment  with MLoaderState {
-  val rhsRegex = """^f.grep\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^f.grep\s+/(.+?)/\s*$""".r)
 
   //Todo use this instead of FGrepHelper
   def fgrep(f: File, cx: HashMap[String, String], r: Regex*): String = {
@@ -592,7 +591,7 @@ class Fgrep(carg: ContextClassArguments) extends FgrepHelper(carg, Fgrep) {
   Mgrep
  */
 object Mgrep extends LoaderContextAssignment  with MLoaderState  {
-  val rhsRegex = """^m.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^m.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new Mgrep(carg)
 }
@@ -611,12 +610,12 @@ class Mgrep(carg: ContextClassArguments) extends FgrepHelper(carg, Mgrep) {
   FpathGrep
  */
 object FpathGrep extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^fpath.grep\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^fpath.grep\s+/(.+?)/\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new FpathGrep(carg)
 }
 
-class FpathGrep(carg: ContextClassArguments) extends AbstractLoaderContext(carg, FpathGrep)  {
+class FpathGrep(carg: ContextClassArguments) extends ALoaderContextExtract(carg, FpathGrep)  {
   private def fpathGrep(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val text = texts.head.trim
     val re = new Regex(text)
@@ -646,7 +645,7 @@ object Bgrep extends LoaderContextAssignment with MLoaderState {
                                         .maximumSize(200)
                                         .build()
 
-  val rhsRegex = """(cache)?\s*b.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""(cache)?\s*b.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r)
 
   def matcher(fp: String)(fn: String): Boolean = {
     new Regex(fp) findFirstMatchIn fn match {
@@ -713,7 +712,7 @@ object BfnameGrep extends LoaderContextAssignment with MLoaderState {
                                               .maximumSize(200)
                                               .build()
 
-  val rhsRegex = """(cache)?\s*b.fname.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""(cache)?\s*b.fname.grep\s+/(.+?)/\s+/(.+?)/\s*$""".r)
 
   def bFnameGrepCacheLoader(fileNamesObtainer: Long => Seq[String])(bundleCacheKey: BFnameGrepKey, cefa: LoaderEvalArguments, fp: String, rp: String, mps: String) = {
     val fileNameOption = fileNamesObtainer(bundleCacheKey.loadId).view.map(fnamegrep(new Regex(fp), new Regex(rp))).find(!_.isEmpty)
@@ -742,7 +741,7 @@ object BfnameGrep extends LoaderContextAssignment with MLoaderState {
   def getObject(carg: ContextClassArguments) = new BfnameGrep(carg, cache)
 }
 
-class BfnameGrep(carg: ContextClassArguments, cache: BfnameGrep.BFnameGrepCache) extends AbstractLoaderContext(carg, BfnameGrep)  {
+class BfnameGrep(carg: ContextClassArguments, cache: BfnameGrep.BFnameGrepCache) extends ALoaderContextExtract(carg, BfnameGrep)  {
   import com.glassbeam.context.BfnameGrep.{BFnameGrepKey, BFnameGrepValue, logger}
 
   val bFnameGrepCacheLoader = BfnameGrep.bFnameGrepCacheLoader(loadId => {
@@ -776,13 +775,13 @@ class BfnameGrep(carg: ContextClassArguments, cache: BfnameGrep.BFnameGrepCache)
   Lookup
  */
 object Lookup extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^lookup\s*\((.+?)\s*\)\s*$""".r
+  val rhsRegex = Some("""^lookup\s*\((.+?)\s*\)\s*$""".r)
 
   val lookupValueObtainer:(String,String)=>Option[String] = LookupTableDao.getFirstValueForKey _
   def getObject(carg: ContextClassArguments) = new Lookup(carg,lookupValueObtainer)
 }
 
-class Lookup(carg: ContextClassArguments, lookupValueObtainer:(String,String)=>Option[String]) extends AbstractLoaderContext(carg, Lookup)  {
+class Lookup(carg: ContextClassArguments, lookupValueObtainer:(String,String)=>Option[String]) extends ALoaderContextExtract(carg, Lookup)  {
 
   import Lookup._
 
@@ -819,12 +818,12 @@ class Lookup(carg: ContextClassArguments, lookupValueObtainer:(String,String)=>O
   XmlValue
  */
 object XmlValue extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^xmlValue\s*\((.+?),(.+?)\)\s*$""".r
+  val rhsRegex = Some("""^xmlValue\s*\((.+?),(.+?)\)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new XmlValue(carg)
 }
 
-class XmlValue(carg: ContextClassArguments) extends AbstractLoaderContext(carg, XmlValue)  {
+class XmlValue(carg: ContextClassArguments) extends ALoaderContextExtract(carg, XmlValue)  {
 
   import XmlValue._
 
@@ -868,15 +867,15 @@ class XmlValue(carg: ContextClassArguments) extends AbstractLoaderContext(carg, 
 /*
   ProcessFileToContext
  */
-object ProcessFileToContext extends LoaderContextAssignment with ParsableObtainer with MLoaderState {
-  val rhsRegex = """^e.processFileToContext\s+/(.+?)/\s+(.+?)\s*$""".r
+object ProcessFileToContextExtract extends LoaderContextAssignment with ParsableObtainer with MLoaderState {
+  val rhsRegex = Some("""^e.processFileToContext\s+/(.+?)/\s+(.+?)\s*$""".r)
 
-  def getObject(carg: ContextClassArguments) = new ProcessFileToContext(carg, parsableObtainer)
+  def getObject(carg: ContextClassArguments) = new ProcessFileToContextExtract(carg, parsableObtainer)
 }
 
-class ProcessFileToContext(carg: ContextClassArguments,getParsable: String => Parsable) extends AbstractLoaderContext(carg, ProcessFileToContext)  {
+class ProcessFileToContextExtract(carg: ContextClassArguments, getParsable: String => Parsable) extends ALoaderContextExtract(carg, ProcessFileToContextExtract)  {
 
-  import ProcessFileToContext._
+  import ProcessFileToContextExtract._
 
   private def processFileToContext(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val (regex, classname) = (texts.head.trim, texts(1).trim)
@@ -902,14 +901,14 @@ trait ParsableObtainer {
 /*
   ProcessBundleToContext
  */
-object ProcessBundleToContext extends LoaderContextAssignment with ParsableObtainer with MLoaderState {
-  val rhsRegex = """^e.processBundleToContext\s+/(.+?)/\s+(.+?)\s*$""".r
-  def getObject(carg: ContextClassArguments) = new ProcessBundleToContext(carg,parsableObtainer)
+object ProcessBundleToContextExtract extends LoaderContextAssignment with ParsableObtainer with MLoaderState {
+  val rhsRegex = Some("""^e.processBundleToContext\s+/(.+?)/\s+(.+?)\s*$""".r)
+  def getObject(carg: ContextClassArguments) = new ProcessBundleToContextExtract(carg,parsableObtainer)
 }
 
-class ProcessBundleToContext(carg: ContextClassArguments, getParsable: String => Parsable) extends AbstractLoaderContext(carg, ProcessBundleToContext)  {
+class ProcessBundleToContextExtract(carg: ContextClassArguments, getParsable: String => Parsable) extends ALoaderContextExtract(carg, ProcessBundleToContextExtract)  {
 
-  import ProcessBundleToContext._
+  import ProcessBundleToContextExtract._
 
   private def processBundleToContext(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val (regex, classname) = (texts.head.trim, texts(1).trim)
@@ -933,12 +932,12 @@ class ProcessBundleToContext(carg: ContextClassArguments, getParsable: String =>
   Fcount
  */
 object Fcount extends LoaderContextAssignment with MLoaderState {
-  val rhsRegex = """^f.count\s+/(.+?)/\s*$""".r
+  val rhsRegex = Some("""^f.count\s+/(.+?)/\s*$""".r)
   val fileNameObtainerForLoadId:Long=>Seq[String] = OpsDao.getNamesByLoadId _
   def getObject(carg: ContextClassArguments) = new Fcount(carg,fileNameObtainerForLoadId)
 }
 
-class Fcount(carg: ContextClassArguments,fileNameObtainerForLoadId:Long=>Seq[String] ) extends AbstractLoaderContext(carg, Fcount)  {
+class Fcount(carg: ContextClassArguments,fileNameObtainerForLoadId:Long=>Seq[String] ) extends ALoaderContextExtract(carg, Fcount)  {
   private def fcount(lhs: String, texts: List[String], cefa:LoaderEvalArguments): ContextReason = {
     val bk = BundleCacheKey(cefa.loadId, carg.linenum)
     val fcountExists: Boolean = {
@@ -971,12 +970,12 @@ class Fcount(carg: ContextClassArguments,fileNameObtainerForLoadId:Long=>Seq[Str
   AssertNumeric
  */
 object AssertNumeric extends LoaderContextAssignment with MLoaderState  {
-  val rhsRegex = """^assertNumeric\((.*)\)\s*$""".r
+  val rhsRegex = Some("""^assertNumeric\((.*)\)\s*$""".r)
 
   def getObject(carg: ContextClassArguments) = new AssertNumeric(carg)
 }
 
-class AssertNumeric(carg: ContextClassArguments) extends AbstractLoaderContext(carg, AssertNumeric) {
+class AssertNumeric(carg: ContextClassArguments) extends ALoaderContextExtract(carg, AssertNumeric) {
   private def assertNumeric(lhs: String, texts: List[String], cefa: LoaderEvalArguments): ContextReason = {
     val text = texts.head.split(",").map(_.trim)
     def getP(index: Int): Int = getParm(text(index), cefa.cr.contextStrings).toInt

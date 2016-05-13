@@ -6,7 +6,7 @@ import com.glassbeam.model.Logger
 
 import scala.util.matching.Regex
 
-abstract class LcpContext(val rhsRegex: Regex) extends LCPContextAssignment
+abstract class LcpContext(val fullRegex: Regex) extends LCPContextAssignment
 
 object LcpStatements {
 
@@ -20,6 +20,8 @@ object LcpStatements {
       case _ => None
     }
   }
+
+  def getObject(carg:ContextClassArguments,frozenObject:LcpContext) = new LCPContextExtractInstance(carg,frozenObject)
 
 }
 
@@ -58,7 +60,7 @@ object SolrContextLines extends LcpSubtype {
     case SolrReplicationFactorLV    => new LcpContext(s"""$S.ReplicationFactorLV='(.+?)'""".r) with ILcpState
   }
 
-  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ solrline => solrline.rhsRegex.pattern.matcher(ma.conline).matches() && solrline.contextSection == ma.cSection }
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ solrline => solrline.fullRegex.pattern.matcher(ma.conline).matches() && solrline.contextSection == ma.cSection }
 }
 
 object CassandraContextLines extends LcpSubtype {
@@ -80,7 +82,7 @@ object CassandraContextLines extends LcpSubtype {
     case CassHost             =>  new LcpContext(s"""$C.Host='(.+?)'""".r) with ILcpState
   }
 
-  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ cassline => cassline.rhsRegex.pattern.matcher(ma.conline).matches() && cassline.contextSection == ma.cSection }
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ cassline => cassline.fullRegex.pattern.matcher(ma.conline).matches() && cassline.contextSection == ma.cSection }
 }
 //
 object S3ContextLines extends LcpSubtype {
@@ -96,11 +98,9 @@ object S3ContextLines extends LcpSubtype {
     case S3Bucket      =>  new LcpContext(s"""$s3.Bucket=(.+?)""".r) with ILcpState
   }
 
-  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ s3line => s3line.rhsRegex.pattern.matcher(ma.conline).matches() && s3line.contextSection == ma.cSection }
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ s3line => s3line.fullRegex.pattern.matcher(ma.conline).matches() && s3line.contextSection == ma.cSection }
 }
 
-
-//
 object LoaderContextLines extends LcpSubtype {
   type LcpSubtype = Value
   val L = Loader.prefix
@@ -116,22 +116,16 @@ object LoaderContextLines extends LcpSubtype {
     case LoadIdPriority  =>  new LcpContext(s"""$L.LoadIdPriority=(.+?)""".r) with ILcpState
   }
 
-  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ loaderline => loaderline.rhsRegex.pattern.matcher(ma.conline).matches() && loaderline.contextSection == ma.cSection }
+  def unapply(ma:MatchArguments): Option[LcpContext] = this.values.map(getDefinition).find{ loaderline => loaderline.fullRegex.pattern.matcher(ma.conline).matches() && loaderline.contextSection == ma.cSection }
 }
 
-object LcpObject  {
-  def getObject(carg:ContextClassArguments,frozenObject:LCPContextAssignment) = new LCPContextInstance(carg,frozenObject)
-}
-
-class LCPContextInstance(carg:ContextClassArguments,contextObject:LCPContextAssignment) extends AbstractLCPContext(carg,contextObject) {
+class LCPContextExtractInstance(carg:ContextClassArguments, contextObject:LcpContext) extends ALCPContextExtract(carg,contextObject) {
 
   def literal(lhs: String, texts: List[String], cefa: LCPEvalArguments): ContextReason = {
     val value = texts.head.trim
     ContextReason(cefa.cr.contextStrings + (lhs -> value), cefa.cr.reason, cefa.cr.failure, cefa.cr.bproperties)
   }
 
-  def execute(cefa:LCPEvalArguments) = {
-    println("IN LCP Instance for "+cefa.cr)
-    evalAssignment(literal, cefa)
-  }
+  def execute(cefa:LCPEvalArguments) = evalAssignment(literal, cefa)
+
 }
