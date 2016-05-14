@@ -1217,14 +1217,14 @@ class AssertBundleDuplicateTestSpec extends FlatSpec with Matchers with dummyRef
   "AssertBundleDuplicate with no inputs" should "succeed" in {
     val ctxLine = "b.assertBundleDuplicate"
     val ctxReason = AssertBundleDuplicate.getObject(getcca(ctxLine)).execute(cefa)
-    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "exists"
+    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "Exists"
     ctxReason.reason shouldBe empty
   }
 
   "AssertBundleDuplicate with one input (email templateId)" should "succeed" in {
     val ctxLine = "b.assertBundleDuplicate(99)"
     val ctxReason = AssertBundleDuplicate.getObject(getcca(ctxLine)).execute(cefa)
-    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "exists"
+    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "Exists"
     ctxReason.reason shouldBe empty
   }
 
@@ -1250,7 +1250,7 @@ class AssertBundleDuplicateTestSpec extends FlatSpec with Matchers with dummyRef
   "AssertBundleDuplicate with two inputs (email templateId and custom msg)" should "succeed" in {
     val ctxLine = """b.assertBundleDuplicate(99, "Greetings, Earthlings!")"""
     val ctxReason = AssertBundleDuplicate.getObject(getcca(ctxLine)).execute(cefa)
-    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "exists"
+    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "Exists"
     ctxReason.reason shouldBe empty
   }
 
@@ -1277,7 +1277,7 @@ class AssertBundleDuplicateTestSpec extends FlatSpec with Matchers with dummyRef
   "AssertBundleDuplicate with one input (custom msg)" should "succeed" in {
     val ctxLine = """b.assertBundleDuplicate("Greetings, Earthlings!")"""
     val ctxReason = AssertBundleDuplicate.getObject(getcca(ctxLine)).execute(cefa)
-    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "exists"
+    ctxReason.contextStrings("assertBundleDuplicate") shouldBe "Exists"
     ctxReason.reason shouldBe empty
   }
 

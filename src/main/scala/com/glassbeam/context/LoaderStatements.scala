@@ -89,6 +89,7 @@ class AssertUncompressionFail(carg: ContextClassArguments) extends ALoaderContex
 
 object Assert extends LoaderContextStatement with MLoaderState {
   val fullRegex = """^f.assert\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
+    //val fullRegexDup = """^f.assert\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
   def getObject(carg: ContextClassArguments) = new Assert(carg)
 }
 
@@ -100,7 +101,8 @@ class Assert(carg: ContextClassArguments) extends ALoaderContextExtract(carg, As
 
   private def assert(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     val text = if (texts.isDefined) texts.get.head.trim else ""
-    val cr2 = if (cefa.cr.contextStrings.getOrElse(text, "").toString.trim.isEmpty) {
+    println(" texts "+texts+" text "+text+" crstrings "+cefa.cr.contextStrings.getOrElse(text, "").trim.isEmpty)
+    val cr2 = if (cefa.cr.contextStrings.getOrElse(text, "").trim.isEmpty) {
       val error_stmt = s"File failed to process as mandatory field '$text' is missing/unavailable. Please contact dl-support@glassbeam.com"
       val customMsg = if (assertOptionalMsg.isDefined) substituteContextInMsg(assertOptionalMsg.get, cefa.cr.contextStrings) else error_stmt
       logger.warning(customMsg)
@@ -285,19 +287,21 @@ class AssertTruthy(carg: ContextClassArguments) extends ALoaderContextExtract(ca
 
   private def assertTruthy(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     def testVar(text: String): Boolean = {
+      println("text value  "+text+" hash values "+cefa.cr.contextStrings.get(text))
       // Invalid or missing inputs will evaulate to true i.e. hold file
-      val tmpVal = cefa.cr.contextStrings.get(text).get.toString
-      //tmpVal.isDefined && !tmpVal.trim.isEmpty
-      !tmpVal.trim.isEmpty match {
+      val tmpVal = cefa.cr.contextStrings.get(text)
+      tmpVal.isDefined && !tmpVal.get.trim.isEmpty match {
         case true =>
-          tmpVal.toUpperCase match {
-            case "TRUE"|"FALSE" => tmpVal.toBoolean
+          tmpVal.get.toUpperCase match {
+            case "TRUE"|"FALSE" => tmpVal.get.toBoolean
             case _ => true
           }
         case _ => true
       }
     }
-    val text = texts.get.head.trim
+    println(" texts values "+texts)
+    val text = texts.getOrElse(List("")).head.trim
+
     val cr2 = if (testVar(text)) {
       logger.warning(mps, s"assertTruthy: FILE(${cefa.file}}) on hold: $text")
       val error_stmt = s"Bundle not processed due to Assertion failure, Please contact dl-support@glassbeam.com"

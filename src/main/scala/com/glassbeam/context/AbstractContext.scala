@@ -69,6 +69,7 @@ abstract class AbstractContextExtract(carg:ClassArguments, acpat: AbstractContex
           }
       }
     } else {
+//      println(" fullRegex "+acpat.fullRegex+" context "+carg.context+" value "+acpat.fullRegex.unapplySeq(carg.context))
       (null, acpat.fullRegex.unapplySeq(carg.context))
     }
     (lhs,rhsSplit)
@@ -135,6 +136,8 @@ abstract class ALCPContextExtract(farg:ContextClassArguments, fcpat:AbstractCont
 abstract class ALoaderContextExtract(carg: ContextClassArguments, lcpat: AbstractContextPattern) extends AbstractContextExtract(carg: ContextClassArguments, lcpat: AbstractContextPattern) {
 
   val (lhs, rhsSplit) =  getLhsRhsRegex
+
+//  println("In ALCE lhs "+lhs+" rhs "+rhsSplit)
 
   lazy val CMPS: String =
     if (carg.customer == null) "loader"
