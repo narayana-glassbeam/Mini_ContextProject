@@ -842,12 +842,12 @@ class XmlValue(carg: ContextClassArguments) extends ALoaderContextExtract(carg, 
               vtdNav = vg.getNav
           }
           //modified and need to put back this one -> val xParser = new Icon(null,null) with XmlParser
-          val xParser = new Icon(null) with XmlParser
+          val xParser = new Icon(null,null) with XmlParser
           if (xParser.isValidXpath(xpath) && vtdNav != null) {
             val vn = vtdNav.duplicateNav
             xParser.getXMLColValue(vn, xpath)
           } else {
-            // logger.error(mps, s"Context error: Xml function has wrong xpath or a non-xml file: xpath=$xpath, file=$f.getString. Defaulting to blanks")
+             logger.error(mps, s"Context error: Xml function has wrong xpath or a non-xml file: xpath=$xpath  Defaulting to blanks")
             ""
           }
         } catch {

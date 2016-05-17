@@ -5,7 +5,7 @@ import akka.actor.ActorRef
 import scala.collection._
 
 //case class Icon(val SM: SharedMutables, val supervisor: ActorRef)
-case class Icon(val supervisor: ActorRef)
+case class Icon(val supervisor: ActorRef,val SM:String)
 
 trait IconTrait {
 

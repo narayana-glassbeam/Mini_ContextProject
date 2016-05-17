@@ -109,20 +109,17 @@ class CoalesceTest extends PropSpec with GeneratorDrivenPropertyChecks with Cont
 }
 
 class AssertTest extends PropSpec with GeneratorDrivenPropertyChecks with ContextTest {
-//  property("test context assert function") {
-//    forAll(genStringNonEmpty, Gen.alphaStr) {
-//      (key: String, value: String) =>
-//        println(" key "+key+" value "+value)
-//        val hm = HashMap[String, String](key -> value)
-//        val cr = ContextReason(hm, "")
-//        val cca = getContextLine("f.assert("+ key + ")")
-//        println(" new context strings are "+hm.mkString)
-//        val newcr = new Assert(cca).execute(getCEFA(cr))
-//        println(s" value is "+value+" isempty "+value.isEmpty+s" newcr.reason isEmpty "+newcr.reason.isEmpty+" cr.reason is empty "+cr.reason.isEmpty+s" ${newcr.reason}")
-//        assert(value.isEmpty ^ newcr.reason.isEmpty)
-//        //assert(cr.reason.isEmpty ^ newcr.reason.isEmpty)
-//    }
-//  }
+  property("test context assert function") {
+    forAll(genStringNonEmpty, Gen.alphaStr) {
+      (key: String, value: String) =>
+        val hm = HashMap[String, String](key -> value)
+        val cr = ContextReason(hm, "")
+        val cca = getContextLine("f.assert("+ key + ")")
+        val newcr = new Assert(cca).execute(getCEFA(cr))
+        assert(value.isEmpty ^ newcr.reason.isEmpty)
+        //assert(cr.reason.isEmpty ^ newcr.reason.isEmpty)
+    }
+  }
 }
 
 class LgrepTest extends PropSpec with GeneratorDrivenPropertyChecks with ContextTest {
@@ -325,7 +322,7 @@ class FgrepTest extends PropSpec with GeneratorDrivenPropertyChecks with Context
         /*val ccamg = getContextLine("""system_timeB=m.grep /System\s+Time\:(.*)/ /System\s+Time\:(.*)/""")
         val cefa2 = getFileCEFA(newcr)
         val newercr = new FpathGrep(ccamg).execute(cefa2) */
-        println(s"newercr = $newcr")
+//        println(s"newercr = $newcr")
 
         val success = newcr.contextStrings.get("system_timeA") match {
           case None => false
@@ -392,7 +389,7 @@ class AssertNumericTest extends PropSpec with GeneratorDrivenPropertyChecks with
         val crBC = new AssertNumeric(ccAssertBC).execute(getCEFA(crAB))
         val crAC = new AssertNumeric(ccAssertAC).execute(getCEFA(crBC))
 
-        println(s"crAC = $crAC")
+//        println(s"crAC = $crAC")
 
         val success = operation match {
           case "==" =>
@@ -465,7 +462,7 @@ class EncodingTest extends PropSpec with GeneratorDrivenPropertyChecks with Cont
         val ccafg = getContextLine(s"""t.encoding=('$encoding',/$rhs.txt/)""")
         val cefa1 = getFileCEFA(cr)
         val newcr = new Encoding(ccafg).execute(cefa1)
-        println(s"newercr = $newcr")
+//        println(s"newercr = $newcr")
         f.delete()
 
         assert(newcr.contextStrings.get("t.encoding") === Some(rhs))

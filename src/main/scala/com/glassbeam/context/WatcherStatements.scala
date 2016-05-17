@@ -11,9 +11,12 @@ object WatcherStatements {
 
   val watcherPatterns:Array[WatcherContextStatement] = Array(DelPat,SkipPat,IncVaultPat,IncParsePat,BinaryPat,TextPat,ReversePat,MostRecPat,ProcessFilePat,UncompressLevelPat)
 
-  def getObject(carg: ContextClassArguments,wo:WatcherContextStatement): AWatcherContextExtract = WatcherInstanceExtract(carg:ContextClassArguments,wo:WatcherContextStatement)
+  def getObject(carg: ContextClassArguments,wco:WatcherContextStatement): AWatcherContextExtract = WatcherInstanceExtract(carg:ContextClassArguments,wco:WatcherContextStatement)
 
-  def unapply(ma:MatchArguments): Option[WatcherContextStatement] = watcherPatterns.find(wopat => wopat.fullRegex.pattern.matcher(ma.conline).matches() && wopat.contextSection == ma.cSection)
+  def unapply(ma:MatchArguments): Option[WatcherContextStatement] = {
+
+    watcherPatterns.find(wopat => wopat.fullRegex.pattern.matcher(ma.conline).matches() && wopat.contextSection == ma.cSection)
+  }
 }
 
 object DelPat extends WatcherContextStatement with MWatcherState {
@@ -63,8 +66,8 @@ object ProcessFilePat extends WatcherContextStatement with MWatcherState {
 }
 
 object UncompressLevelPat extends WatcherContextStatement with MWatcherState {
-  override val name = "UncompressPattern"
-  override val fullRegex: Regex = """b.uncompress.level\s+/(.+?)/\s+(\d+)""".r
+    override val name = "UncompressPattern"
+    override val fullRegex: Regex = """b.uncompress.level\s+/(.+?)/\s+(\d+)""".r
 }
 
 

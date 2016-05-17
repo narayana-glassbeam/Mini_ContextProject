@@ -144,7 +144,6 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
           val lca = ContextClassArguments(context,linenum,customer,manufacturer,product,schema)
           MatchArguments(context,cSection) match {
             case WatcherStatements(wp)  =>
-              println(" watcher pattern found for "+wp.name)
               val watInst = WatcherStatements.getObject(lca,wp)
               addWCInstances(wp.name,cSection,watInst)
             case LoaderStatements(ls)   =>
@@ -156,7 +155,7 @@ class MpsContext(emps: String,immContextLines:Array[String]) extends Actor with 
             case LcpStatements(ls,key)  =>
               val lcpInst = LcpStatements.getObject(lca,ls)
               addLCPInstances(key,cSection,lcpInst)
-            case x => println("Not matched with "+x.conline)
+            case x => logger.error("Not matched with "+x.conline)
 
           }
 

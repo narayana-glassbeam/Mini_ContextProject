@@ -492,7 +492,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
     val x = clsLschema.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(x.reason.isEmpty)
   }
   "Testing l.schema Without RHS" should "Be Failed" in {
@@ -501,7 +501,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
     val x = clsLschema.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing l.schema without LHS' " should "Be Failed" in {
@@ -510,7 +510,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
     val x = clsLschema.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing l.schema with  RHS=schema' " should "Be Failed" in {
@@ -519,7 +519,7 @@ class LSchemaSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLschema = new Lschema(cca)
     val x = clsLschema.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
 }
@@ -531,7 +531,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, new java.io.File("/tmp/test.txt"), -1,"mps")
     val clsFDate = new Fdate(cca)
     val x = clsFDate.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(x.reason.isEmpty)
   }
   "Testing x=f.date With NULL" should "Be Failed " in {
@@ -540,7 +540,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
     val x = clsFDate.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing f.date without using f.date " should "Be Failed " in {
@@ -549,7 +549,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
     val x = clsFDate.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing x=f.date on NULL" should "Be Failed " in {
@@ -558,7 +558,7 @@ class FDateSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Fdate(cca)
     val x = clsFDate.execute(cefa)
-    println(s"Reason = ${x.reason}")
+//    println(s"Reason = ${x.reason}")
     assert(x.contextStrings.get("x") === Some("None"))
   }
 }
@@ -571,8 +571,8 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsFDate = new Lcustomer(cca)
     val x = clsFDate.execute(cefa)
-    println("Context String EC = " + cefa.cr)
-    println(s"Reason = ${x.reason}")
+//    println("Context String EC = " + cefa.cr)
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.customer functionality by comparision" should "Be Passed " in {
@@ -596,8 +596,8 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLProd = new Lproduct(cca)
     val x = clsLProd.execute(cefa)
-    println("Context String EC = " + cefa.cr)
-    println(s"Reason = ${x.reason}")
+//    println("Context String EC = " + cefa.cr)
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.product functionality by comparision" should "Be Passed " in {
@@ -613,8 +613,8 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLMfr = new Lmanufacturer(cca)
     val x = clsLMfr.execute(cefa)
-    println("Context String EC = " + cefa.cr)
-    println(s"Reason = ${x.reason}")
+//    println("Context String EC = " + cefa.cr)
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.manufacturer functionality by comparision" should "Be Passed " in {
@@ -630,8 +630,8 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, null, -1,"mps")
     val clsLSch = new Lschema(cca)
     val x = clsLSch.execute(cefa)
-    println("Context String EC = " + cefa.cr)
-    println(s"Reason = ${x.reason}")
+//    println("Context String EC = " + cefa.cr)
+//    println(s"Reason = ${x.reason}")
     assert(!x.reason.isEmpty)
   }
   "Testing x=l.schema functionality by comparision" should "Be Passed " in {
@@ -657,7 +657,7 @@ class LoaderTestSpec extends FlatSpec with Matchers with dummyRefs {
     val cefa = LoaderEvalArguments(dummyCR, new java.io.File("/tmp/test.txt"), -1,"mps")
     val clsFname = new Fname(cca)
     val x = clsFname.execute(cefa)
-    println(x.contextStrings)
+//    println(x.contextStrings)
     assert(x.reason.isEmpty())
   }
 }

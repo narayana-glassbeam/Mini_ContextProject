@@ -88,8 +88,7 @@ class AssertUncompressionFail(carg: ContextClassArguments) extends ALoaderContex
 
 
 object Assert extends LoaderContextStatement with MLoaderState {
-  val fullRegex = """^f.assert\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
-    //val fullRegexDup = """^f.assert\s*\((\s*[A-Za-z_]\w+\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
+  val fullRegex = """^f.assert\s*\((\s*[A-Za-z_]\w*\s*)(,\s*(\d+)\s*|)(,\s*(\d+)\s*,\s*(.*)\s*|)(,\s*(.*)\s*|)?\)\s*$""".r
   def getObject(carg: ContextClassArguments) = new Assert(carg)
 }
 
@@ -101,7 +100,7 @@ class Assert(carg: ContextClassArguments) extends ALoaderContextExtract(carg, As
 
   private def assert(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     val text = if (texts.isDefined) texts.get.head.trim else ""
-    println(" texts "+texts+" text "+text+" crstrings "+cefa.cr.contextStrings.getOrElse(text, "").trim.isEmpty)
+//    println(" texts "+texts+" text "+text+" crstrings "+cefa.cr.contextStrings.getOrElse(text, "").trim.isEmpty)
     val cr2 = if (cefa.cr.contextStrings.getOrElse(text, "").trim.isEmpty) {
       val error_stmt = s"File failed to process as mandatory field '$text' is missing/unavailable. Please contact dl-support@glassbeam.com"
       val customMsg = if (assertOptionalMsg.isDefined) substituteContextInMsg(assertOptionalMsg.get, cefa.cr.contextStrings) else error_stmt
@@ -287,7 +286,7 @@ class AssertTruthy(carg: ContextClassArguments) extends ALoaderContextExtract(ca
 
   private def assertTruthy(texts: Option[List[String]], cefa: LoaderEvalArguments): ContextReason = {
     def testVar(text: String): Boolean = {
-      println("text value  "+text+" hash values "+cefa.cr.contextStrings.get(text))
+//      println("text value  "+text+" hash values "+cefa.cr.contextStrings.get(text))
       // Invalid or missing inputs will evaulate to true i.e. hold file
       val tmpVal = cefa.cr.contextStrings.get(text)
       tmpVal.isDefined && !tmpVal.get.trim.isEmpty match {
@@ -299,7 +298,7 @@ class AssertTruthy(carg: ContextClassArguments) extends ALoaderContextExtract(ca
         case _ => true
       }
     }
-    println(" texts values "+texts)
+//    println(" texts values "+texts)
     val text = texts.getOrElse(List("")).head.trim
 
     val cr2 = if (testVar(text)) {
